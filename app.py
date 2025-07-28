@@ -5,10 +5,10 @@ import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_
+from sqlalchemy import or_ # Para filtros OR
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+app.secret_key = 'your_secret_key_here' # Necesario para usar flash messages
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -44,7 +44,7 @@ class Registro(db.Model):
     fecha_hora_devolucion = db.Column(db.DateTime, nullable=True)
     id_personal_devolucion = db.Column(db.String(100), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default='Pendiente')
-    # is_archived = db.Column(db.Boolean, default=False) # COMENTADO TEMPORALMENTE
+    # is_archived = db.Column(db.Boolean, default=False) # COMENTADO: Deshabilitado temporalmente
 
     def __repr__(self):
         return f"<Registro {self.id} - {self.nombre_equipo}>"
@@ -52,8 +52,8 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
-    # --- INICIO: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
-    # !!! ATENCIÓN: ESTO BORRA Y VUELVE A INSERTAR PERSONAL Y EQUIPOS EN CADA INICIO !!!
+    # CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs
+    # ¡ATENCIÓN: ESTO BORRA Y VUELVE A INSERTAR PERSONAL Y EQUIPOS EN CADA INICIO!
     # Lo eliminaremos al final.
 
     print("DEBUG: Borrando datos existentes de Personal para recargar desde CSV...")
@@ -101,10 +101,10 @@ with app.app_context():
             print("DEBUG: Equipos.csv no contenía equipos para insertar.")
     except FileNotFoundError:
         print("ERROR: Equipos.csv no encontrado en el servidor de Render. No se pudieron cargar equipos originales.")
+        db.session.rollback()
     except Exception as e:
         db.session.rollback()
         print(f"ERROR: Fallo al cargar equipos desde CSV: {e}")
-    # --- FIN: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
 
     print(f"DEBUG: La tabla 'personal' tiene {Personal.query.count()} registros al final del startup.")
     print(f"DEBUG: La tabla 'equipo' tiene {Equipo.query.count()} registros al final del startup.")
@@ -153,7 +153,7 @@ def index():
             'Fecha y Hora Devolucion': fecha_devolucion_local.strftime('%d/%m/%Y %H:%M') if fecha_devolucion_local else '',
             'ID Personal Devolucion': reg.id_personal_devolucion,
             'Estado': reg.estado,
-            # 'is_archived': reg.is_archived # COMENTADO TEMPORALMENTE
+            # 'is_archived': reg.is_archived # COMENTADO
         })
 
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
@@ -184,7 +184,7 @@ def registrar_salida():
         id_personal_salida=personal_nombre_salida,
         fecha_hora_salida=fecha_hora_salida_utc,
         estado='Pendiente'
-        # is_archived=False # COMENTADO TEMPORALMENTE
+        # is_archived=False # COMENTADO
     )
     db.session.add(nuevo_registro)
     db.session.commit()
