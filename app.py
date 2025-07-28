@@ -5,10 +5,10 @@ import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_ # Para filtros OR
+from sqlalchemy import or_
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here' # Necesario para usar flash messages
+app.secret_key = 'your_secret_key_here'
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -18,6 +18,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 BUENOS_AIRES_TZ = ZoneInfo("America/Argentina/Buenos_Aires")
+
+# Función para generar UUIDs (para evitar el warning del linter en lambda)
+def generate_uuid():
+    return str(uuid.uuid4())
 
 class Personal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -36,7 +40,7 @@ class Equipo(db.Model):
         return f"<Equipo {self.nombre_equipo}>"
 
 class Registro(db.Model):
-    id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = db.Column(db.String(50), primary_key=True, default=generate_uuid)
     fecha_hora_salida = db.Column(db.DateTime, nullable=False, default=datetime.now)
     nombre_usuario = db.Column(db.String(100), nullable=False)
     nombre_equipo = db.Column(db.String(100), nullable=False)
@@ -44,7 +48,8 @@ class Registro(db.Model):
     fecha_hora_devolucion = db.Column(db.DateTime, nullable=True)
     id_personal_devolucion = db.Column(db.String(100), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default='Pendiente')
-    # is_archived = db.Column(db.Boolean, default=False) # COMENTADO: Deshabilitado temporalmente
+    # is_archived = db.Column(db.Boolean, default=False) # LÍNEA COMENTADA
+
 
     def __repr__(self):
         return f"<Registro {self.id} - {self.nombre_equipo}>"
@@ -53,8 +58,7 @@ with app.app_context():
     db.create_all()
 
     # CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs
-    # ¡ATENCIÓN: ESTO BORRA Y VUELVE A INSERTAR PERSONAL Y EQUIPOS EN CADA INICIO!
-    # Lo eliminaremos al final.
+    # ESTO SE DEJARÁ AQUÍ HASTA QUE SE CONFIRME QUE LOS DATOS ESTÁN CARGADOS Y LUEGO SE BORRARÁ.
 
     print("DEBUG: Borrando datos existentes de Personal para recargar desde CSV...")
     db.session.query(Personal).delete()
@@ -113,12 +117,12 @@ with app.app_context():
 def index():
     responsable_filter = request.args.get('responsable_filter')
     pc_filter = request.args.get('pc_filter')
-    # show_archived = request.args.get('show_archived', 'off') == 'on' # COMENTADO
+    # show_archived = request.args.get('show_archived', 'off') == 'on' # COMENTADO AQUI TAMBIÉN
 
     query = Registro.query
 
-    # if not show_archived: # COMENTADO
-    #     query = query.filter_by(is_archived=False) # COMENTADO
+    # if not show_archived: # COMENTADO AQUI TAMBIÉN
+    #     query = query.filter_by(is_archived=False) # COMENTADO AQUI TAMBIÉN
     
     if responsable_filter:
         query = query.filter(or_(
@@ -131,7 +135,8 @@ def index():
 
     query = query.order_by(Registro.fecha_hora_salida.desc())
 
-    if not responsable_filter and not pc_filter: # show_archived ya no es un filtro activo aquí
+    # La condición de límite ya no depende de show_archived
+    if not responsable_filter and not pc_filter:
         registros_db = query.limit(35).all()
     else:
         registros_db = query.all()
@@ -153,7 +158,7 @@ def index():
             'Fecha y Hora Devolucion': fecha_devolucion_local.strftime('%d/%m/%Y %H:%M') if fecha_devolucion_local else '',
             'ID Personal Devolucion': reg.id_personal_devolucion,
             'Estado': reg.estado,
-            # 'is_archived': reg.is_archived # COMENTADO
+            # 'is_archived': reg.is_archived # COMENTADO AQUI TAMBIÉN
         })
 
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
@@ -168,7 +173,7 @@ def index():
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
                            pc_filter=pc_filter,
-                           # show_archived=show_archived # COMENTADO
+                           # show_archived=show_archived # COMENTADO AQUI TAMBIÉN
                            )
 
 @app.route('/registrar_salida', methods=['POST'])
@@ -184,7 +189,7 @@ def registrar_salida():
         id_personal_salida=personal_nombre_salida,
         fecha_hora_salida=fecha_hora_salida_utc,
         estado='Pendiente'
-        # is_archived=False # COMENTADO
+        # is_archived=False # COMENTADO AQUI TAMBIÉN
     )
     db.session.add(nuevo_registro)
     db.session.commit()
