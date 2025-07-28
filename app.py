@@ -1,3 +1,4 @@
+import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for
 import os
 from datetime import datetime
@@ -45,27 +46,53 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
-    # --- INICIO: LÍNEAS TEMPORALES PARA DEPURACIÓN DE DB ---
-    # Añadir un personal de prueba si la tabla está vacía
     if Personal.query.count() == 0:
-        print("DEBUG: La tabla 'personal' está vacía. Insertando personal de prueba...")
-        test_personal = Personal(nombre_responsable="Test Person", email="test@example.com")
-        db.session.add(test_personal)
-        db.session.commit()
-        print("DEBUG: Personal de prueba insertado.")
+        print("DEBUG: La tabla 'personal' está vacía. Intentando cargar desde Personal.csv...")
+        try:
+            df_personal_original = pd.read_csv(os.path.join(BASE_DIR, 'Personal.csv'), delimiter=';')
+            personas_a_añadir = []
+            for index, row in df_personal_original.iterrows():
+                existing_personal = Personal.query.filter_by(nombre_responsable=row['Nombre Responsable']).first()
+                if not existing_personal:
+                    new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
+                    personas_a_añadir.append(new_personal)
+            if personas_a_añadir:
+                db.session.add_all(personas_a_añadir)
+                db.session.commit()
+                print(f"DEBUG: {len(personas_a_añadir)} personas originales insertadas desde Personal.csv.")
+            else:
+                print("DEBUG: Personal.csv no contenía nuevas personas para insertar o ya existían.")
+        except FileNotFoundError:
+            print("ERROR: Personal.csv no encontrado en el servidor de Render. No se pudieron cargar personas originales.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"ERROR: Fallo al cargar personal desde CSV: {e}")
     else:
-        print(f"DEBUG: La tabla 'personal' ya tiene {Personal.query.count()} registros.")
+        print(f"DEBUG: La tabla 'personal' ya tiene {Personal.query.count()} registros (saltando carga desde CSV).")
 
-    # Añadir un equipo de prueba si la tabla está vacía
     if Equipo.query.count() == 0:
-        print("DEBUG: La tabla 'equipo' está vacía. Insertando equipo de prueba...")
-        test_equipo = Equipo(nombre_equipo="Test PC", descripcion="Equipo de prueba")
-        db.session.add(test_equipo)
-        db.session.commit()
-        print("DEBUG: Equipo de prueba insertado.")
+        print("DEBUG: La tabla 'equipo' está vacía. Intentando cargar desde Equipos.csv...")
+        try:
+            df_equipos_original = pd.read_csv(os.path.join(BASE_DIR, 'Equipos.csv'), delimiter=';')
+            equipos_a_añadir = []
+            for index, row in df_equipos_original.iterrows():
+                existing_equipo = Equipo.query.filter_by(nombre_equipo=row['Nombre Equipo']).first()
+                if not existing_equipo:
+                    new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
+                    equipos_a_añadir.append(new_equipo)
+            if equipos_a_añadir:
+                db.session.add_all(equipos_a_añadir)
+                db.session.commit()
+                print(f"DEBUG: {len(equipos_a_añadir)} equipos originales insertados desde Equipos.csv.")
+            else:
+                print("DEBUG: Equipos.csv no contenía nuevos equipos para insertar o ya existían.")
+        except FileNotFoundError:
+            print("ERROR: Equipos.csv no encontrado en el servidor de Render. No se pudieron cargar equipos originales.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"ERROR: Fallo al cargar equipos desde CSV: {e}")
     else:
-        print(f"DEBUG: La tabla 'equipo' ya tiene {Equipo.query.count()} registros.")
-    # --- FIN: LÍNEAS TEMPORALES PARA DEPURACIÓN DE DB ---
+        print(f"DEBUG: La tabla 'equipo' ya tiene {Equipo.query.count()} registros (saltando carga desde CSV).")
 
 @app.route('/')
 def index():
@@ -89,10 +116,8 @@ def index():
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
     equipos_para_html = [{'Nombre Equipo': e.nombre_equipo} for e in equipos_db]
 
-    # --- LÍNEAS TEMPORALES PARA DEPURACIÓN EN index() ---
     print(f"DEBUG: Número de personal enviado al HTML: {len(personal_db)}")
     print(f"DEBUG: Número de equipos enviado al HTML: {len(equipos_db)}")
-    # --- FIN: LÍNEAS TEMPORALES PARA DEPURACIÓN EN index() ---
 
     return render_template('index.html',
                            personal=personal_para_html,
