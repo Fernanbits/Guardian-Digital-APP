@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardían Digital</title>
+    <style>
+        /* Estilos CSS básicos para que se vea un poco mejor */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #0056b3; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #e2e2e2; }
+        form { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input[type="text"], form select { width: calc(100% - 22px); padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        form input[type="submit"] { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        form input[type="submit"]:hover { background-color: #0056b3; }
+        .error { color: red; font-weight: bold; }
+        /* Estilos para el formulario de devolución en línea */
+        .inline-devolucion-form {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 5px;
+            background-color: #eef;
+            border-radius: 4px;
+        }
+        .inline-devolucion-form select, .inline-devolucion-form input[type="submit"] {
+            width: auto; /* Ajustar el ancho en línea */
+            margin-bottom: 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: white;
+        }
+        .status-pendiente { background-color: #ffc107; color: #333; } /* Amarillo para pendiente */
+        .status-completo { background-color: #28a745; } /* Verde para completo */
+    </style>
+</head>
+<body>
+    <h1>Sistema Guardián Digital</h1>
+
+    <div class="container">
+        <h2>Registrar Salida de Equipo</h2>
+        <form action="/registrar_salida" method="POST">
+            <label for="equipo_id_salida">Seleccionar Equipo:</label>
+            <select id="equipo_id_salida" name="equipo_id" required>
+                <option value="">-- Seleccione un equipo --</option>
+                {% for equipo in equipos %}
+                    <option value="{{ equipo['Nombre Equipo'] }}">{{ equipo['Nombre Equipo'] }}</option>
+                {% endfor %}
+            </select><br>
+
+            <label for="personal_id_salida">Persona que Retira:</label>
+            <select id="personal_id_salida" name="personal_id_salida" required>
+                <option value="">-- Seleccione una persona --</option>
+                {% for persona in personal %}
+                    <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
+                {% endfor %}
+            </select><br>
+
+            <label for="nombre_usuario">Nombre de Usuario (quien usará el equipo):</label>
+            <input type="text" id="nombre_usuario" name="nombre_usuario" required><br>
+
+            <input type="submit" value="Registrar Salida">
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Registros de Uso de Equipos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID Registro</th>
+                    <th>Fecha y Hora Salida</th>
+                    <th>Nombre Usuario</th>
+                    <th>Nombre Equipo</th>
+                    <th>ID Personal Salida</th>
+                    <th>Fecha y Hora Devolución</th>
+                    <th>ID Personal Devolución</th>
+                    <th>Estado</th>
+                    <th>Acciones</th> {# Nueva columna para el botón de devolución #}
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros %}
+                <tr>
+                    <td>{{ registro['ID Registro'] }}</td>
+                    <td>{{ registro['Fecha y Hora Salida'] }}</td>
+                    <td>{{ registro['Nombre Usuario'] }}</td>
+                    <td>{{ registro['Nombre Equipo'] }}</td>
+                    <td>{{ registro['ID Personal Salida'] }}</td>
+                    <td>{{ registro['Fecha y Hora Devolucion'] }}</td>
+                    <td>{{ registro['ID Personal Devolucion'] }}</td>
+                    <td>
+                        <span class="status-badge status-{{ registro['Estado']|lower }}">
+                            {{ registro['Estado'] }}
+                        </span>
+                    </td>
+                    <td>
+                        {# Mostrar el formulario de devolución solo si el estado es 'Pendiente' #}
+                        {% if registro['Estado'] == 'Pendiente' %}
+                        <form action="/registrar_devolucion" method="POST" class="inline-devolucion-form">
+                            <input type="hidden" name="registro_id" value="{{ registro['ID Registro'] }}">
+                            <select name="personal_id_devolucion" required>
+                                <option value="">-- Persona que recibe --</option>
+                                {% for persona in personal %}
+                                    <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="submit" value="Registrar Devolución">
+                        </form>
+                        {% else %}
+                        {# Si no está pendiente, no hay acción de devolución #}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
