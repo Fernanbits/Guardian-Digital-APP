@@ -45,7 +45,8 @@ form label {
 }
 
 form input[type="text"],
-form select {
+form select,
+.filter-form input[type="checkbox"] { /* Añadir checkbox para estilos */
     width: 100%; /* Ocupa todo el ancho disponible del contenedor */
     padding: 10px 12px;
     border: 1px solid #ccc;
@@ -54,6 +55,12 @@ form select {
     box-sizing: border-box; /* Incluye padding y borde en el ancho total */
     background-color: #f8f8f8;
 }
+.filter-form input[type="checkbox"] {
+    width: auto; /* Ajustar ancho para checkboxes */
+    padding: 0;
+    margin-top: 5px;
+}
+
 
 form input[type="text"]:focus,
 form select:focus {
@@ -143,6 +150,8 @@ tbody tr:hover {
 }
 .status-pendiente { background-color: #ffc107; color: #333; } /* Amarillo más cálido */
 .status-completo { background-color: #28a745; } /* Verde vibrante */
+.status-archived { background-color: #6c757d; font-size: 0.7em; } /* Gris para archivado */
+
 
 /* Estilos de error (si los usas) */
 .error {
@@ -208,5 +217,224 @@ tbody tr:hover {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Dos columnas para labels/inputs */
     gap: 15px 20px; /* Espacio entre filas y columnas */
-    align-items: end; /* Alinea los elementos al final */
+    align-items: center; /* Alinea los elementos al centro */
+}
+
+.filter-form label {
+    margin-bottom: 0; /* Quitar el margin-bottom del label general */
+}
+
+.filter-form input[type="text"] {
+    width: 100%;
+}
+
+.filter-form input[type="submit"] {
+    grid-column: 1 / span 2; /* Que ocupe ambas columnas */
+    width: auto;
+    margin: 10px auto 0 auto; /* Centrar el botón */
+    padding: 10px 20px;
+}
+
+.clear-filters-btn {
+    grid-column: 1 / span 2;
+    text-align: center;
+    display: block;
+    margin-top: 10px;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 0.95em;
+    transition: color 0.3s ease;
+}
+
+.clear-filters-btn:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Estilos para el formulario de acciones en lote */
+.batch-update-form {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fcfcfc;
+}
+
+.batch-actions {
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* Ajustar columnas para elementos en línea */
+    gap: 15px;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+.batch-actions label {
+    margin-bottom: 0;
+    white-space: nowrap; /* Evitar que el label se rompa */
+}
+.batch-actions select {
+    width: 100%;
+}
+.batch-actions input[type="submit"] {
+    align-self: flex-start; /* Alinea el botón al inicio */
+    width: auto;
+    margin: 0; /* Eliminar margen extra */
+}
+#select_all_records {
+    width: auto;
+    margin-right: 5px;
+}
+
+/* Flash Messages */
+.flash-messages {
+    list-style: none;
+    padding: 10px 20px;
+    margin: 10px auto 20px auto;
+    max-width: 900px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.flash-messages li {
+    margin: 5px 0;
+    padding: 0;
+}
+.flash-messages .success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.flash-messages .warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+.flash-messages .danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+
+/* Responsividad general */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    .container {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    h1 {
+        font-size: 1.8em;
+    }
+    h2 {
+        font-size: 1.4em;
+        margin-bottom: 15px;
+    }
+
+    /* Navbar en móvil */
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+    .navbar-brand {
+        margin-bottom: 10px;
+    }
+    .navbar-nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .navbar-nav li {
+        margin: 5px 0;
+    }
+
+    /* Filtros en móvil */
+    .filter-form {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .filter-form input[type="submit"],
+    .clear-filters-btn {
+        grid-column: auto;
+        width: 100%;
+        margin-top: 5px;
+    }
+    .filter-form label {
+        text-align: left;
+    }
+
+    /* Tabla en móvil */
+    table {
+        display: block;
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+    thead {
+        display: none;
+    }
+    tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra ligera para cada card de fila */
+    }
+    td {
+        display: block;
+        text-align: left;
+        padding-left: 0;
+        position: relative;
+        padding-bottom: 10px; /* Espacio debajo del contenido de la celda */
+        border-bottom: none; /* Eliminar bordes inferiores de celdas individuales */
+    }
+    td:before {
+        content: attr(data-label);
+        position: relative; /* Cambiado a relative para fluir con el texto */
+        display: block;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 5px;
+        padding-right: 10px;
+        white-space: nowrap;
+    }
+    td:last-child {
+        padding-bottom: 0;
+    }
+    /* Estilo específico para el checkbox de la fila */
+    td:first-child {
+        text-align: center;
+        padding-top: 0;
+        padding-bottom: 0;
+        min-height: 20px; /* Asegura espacio para el checkbox */
+    }
+    td:first-child:before {
+        display: none; /* Ocultar etiqueta para el checkbox */
+    }
+
+    /* Acciones en lote en móvil */
+    .batch-actions {
+        grid-template-columns: 1fr; /* Una columna para móvil */
+        gap: 10px;
+    }
+    .batch-actions select,
+    .batch-actions input[type="submit"] {
+        width: 100%;
+        margin-top: 0;
+    }
+    .batch-actions label {
+        text-align: left;
+    }
+}
+
+/* Estilo para registros archivados en la tabla */
+.status-archived {
+    background-color: #6c757d; /* Gris para archivado */
+    font-size: 0.75em; /* Ligeramente más pequeño */
+    margin-left: 5px; /* Espacio entre badge de estado y archivado */
 }

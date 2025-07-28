@@ -16,6 +16,16 @@
 
     <h1>Sistema Guardián Digital</h1>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
     <div class="container">
         <h2>Registrar Salida de Equipo</h2>
         <form action="/registrar_salida" method="POST">
@@ -50,9 +60,12 @@
 
             <label for="pc_filter">Filtrar por PC:</label>
             <input type="text" id="pc_filter" name="pc_filter" value="{{ pc_filter or '' }}" placeholder="Ej. PC-01">
+            
+            <label for="show_archived">Mostrar archivados:</label>
+            <input type="checkbox" id="show_archived" name="show_archived" {% if show_archived %}checked{% endif %}>
 
             <input type="submit" value="Aplicar Filtros">
-            {% if responsable_filter or pc_filter %}
+            {% if responsable_filter or pc_filter or show_archived %}
                 <a href="{{ url_for('index') }}" class="clear-filters-btn">Limpiar Filtros</a>
             {% endif %}
         </form>
@@ -60,58 +73,99 @@
 
     <div class="container">
         <h2>Registros de Uso de Equipos</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID Registro</th>
-                    <th>Fecha y Hora Salida</th>
-                    <th>Nombre Usuario</th>
-                    <th>Nombre Equipo</th>
-                    <th>ID Personal Salida</th>
-                    <th>Fecha y Hora Devolución</th>
-                    <th>ID Personal Devolución</th>
-                    <th>Estado</th>
-                    <th>Acciones</th> {# Nueva columna para el botón de devolución #}
-                </tr>
-            </thead>
-            <tbody>
-                {% for registro in registros %}
-                <tr>
-                    <td>{{ registro['ID Registro'] }}</td>
-                    <td>{{ registro['Fecha y Hora Salida'] }}</td>
-                    <td>{{ registro['Nombre Usuario'] }}</td>
-                    <td>{{ registro['Nombre Equipo'] }}</td>
-                    <td>{{ registro['ID Personal Salida'] }}</td>
-                    <td>{{ registro['Fecha y Hora Devolucion'] }}</td>
-                    <td>{{ registro['ID Personal Devolucion'] }}</td>
-                    <td>
-                        <span class="status-badge status-{{ registro['Estado']|lower }}">
-                            {{ registro['Estado'] }}
-                        </span>
-                    </td>
-                    <td>
-                        {# Mostrar el formulario de devolución solo si el estado es 'Pendiente' #}
-                        {% if registro['Estado'] == 'Pendiente' %}
-                        <form action="/registrar_devolucion" method="POST" class="inline-devolucion-form">
-                            <input type="hidden" name="registro_id" value="{{ registro['ID Registro'] }}">
-                            <select name="personal_id_devolucion" required>
-                                <option value="">-- Persona que recibe --</option>
-                                {% for persona in personal %}
-                                    <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
-                                {% endfor %}
-                            </select>
-                            <input type="submit" value="Registrar Devolución">
-                        </form>
-                        {% else %}
-                        {# Si no está pendiente, no hay acción de devolución #}
-                        -
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <form action="/batch_update" method="POST" class="batch-update-form">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select_all_records"></th> {# Checkbox para seleccionar todos #}
+                        <th>ID Registro</th>
+                        <th>Fecha y Hora Salida</th>
+                        <th>Nombre Usuario</th>
+                        <th>Nombre Equipo</th>
+                        <th>ID Personal Salida</th>
+                        <th>Fecha y Hora Devolución</th>
+                        <th>ID Personal Devolución</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                    <tr>
+                        <td>
+                            {% if registro['Estado'] == 'Pendiente' %}
+                                <input type="checkbox" name="selected_records" value="{{ registro['ID Registro'] }}">
+                            {% endif %}
+                        </td>
+                        <td data-label="ID Registro">{{ registro['ID Registro'] }}</td>
+                        <td data-label="Fecha y Hora Salida">{{ registro['Fecha y Hora Salida'] }}</td>
+                        <td data-label="Nombre Usuario">{{ registro['Nombre Usuario'] }}</td>
+                        <td data-label="Nombre Equipo">{{ registro['Nombre Equipo'] }}</td>
+                        <td data-label="ID Personal Salida">{{ registro['ID Personal Salida'] }}</td>
+                        <td data-label="Fecha y Hora Devolución">{{ registro['Fecha y Hora Devolucion'] }}</td>
+                        <td data-label="ID Personal Devolución">{{ registro['ID Personal Devolucion'] }}</td>
+                        <td data-label="Estado">
+                            <span class="status-badge status-{{ registro['Estado']|lower }}">
+                                {{ registro['Estado'] }}
+                            </span>
+                            {% if registro['is_archived'] %}<span class="status-badge status-archived">Archivado</span>{% endif %}
+                        </td>
+                        <td data-label="Acciones">
+                            {% if registro['Estado'] == 'Pendiente' %}
+                            <form action="/registrar_devolucion" method="POST" class="inline-devolucion-form">
+                                <input type="hidden" name="registro_id" value="{{ registro['ID Registro'] }}">
+                                <select name="personal_id_devolucion" required>
+                                    <option value="">-- Persona que recibe --</option>
+                                    {% for persona in personal %}
+                                        <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="submit" value="Devolver">
+                            </form>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="batch-actions">
+                <label for="batch_responsible_devolucion">Responsable para lote:</label>
+                <select name="batch_responsible_devolucion" id="batch_responsible_devolucion">
+                    <option value="">-- Seleccione responsable --</option>
+                    {% for persona in personal %}
+                        <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="batch_action" id="batch_action" required>
+                    <option value="">-- Seleccione acción --</option>
+                    <option value="complete">Completar seleccionados</option>
+                    <option value="archive">Archivar seleccionados</option>
+                    <option value="unarchive">Desarchivar seleccionados</option>
+                </select>
+
+                <input type="submit" value="Realizar acción en lote">
+            </div>
+        </form>
     </div>
 
+    <script>
+        // JavaScript para seleccionar/deseleccionar todos los checkboxes
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('select_all_records');
+            const recordCheckboxes = document.querySelectorAll('input[name="selected_records"]');
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    recordCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
