@@ -1,10 +1,10 @@
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
 import os
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+from flask_sqlalchemy import SQLAlchemy
 import uuid
-from datetime import datetime, timezone # Importar timezone de datetime
-from zoneinfo import ZoneInfo # Importar ZoneInfo
 
 app = Flask(__name__)
 
@@ -15,8 +15,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Definir el huso horario de Buenos Aires (ART)
-# Puedes encontrar los nombres de huso horario en la base de datos IANA (ej. 'America/Argentina/Buenos_Aires')
 BUENOS_AIRES_TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
 class Personal(db.Model):
@@ -51,61 +49,85 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
-    # CÓDIGO TEMPORAL PARA CARGAR DATOS ORIGINALES (NO BORRADO AÚN)
+    # --- INICIO: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
+    # !!! ATENCIÓN: ESTO BORRA Y VUELVE A INSERTAR PERSONAL Y EQUIPOS EN CADA INICIO !!!
+    # Lo eliminaremos al final.
+
+    print("DEBUG: Borrando datos existentes de Personal para recargar desde CSV...")
+    db.session.query(Personal).delete()
+    db.session.commit()
+    print("DEBUG: Datos de Personal borrados.")
+
     print("DEBUG: Intentando cargar datos de Personal desde Personal.csv...")
     try:
         df_personal_original = pd.read_csv(os.path.join(BASE_DIR, 'Personal.csv'), delimiter=';')
-        personas_añadidas = 0
+        personas_a_añadir = []
         for index, row in df_personal_original.iterrows():
-            existing_personal = Personal.query.filter_by(nombre_responsable=row['Nombre Responsable']).first()
-            if not existing_personal:
-                new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
-                db.session.add(new_personal)
-                personas_añadidas += 1
-        if personas_añadidas > 0:
+            new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
+            personas_a_añadir.append(new_personal)
+        if personas_a_añadir:
+            db.session.add_all(personas_a_añadir)
             db.session.commit()
-            print(f"DEBUG: {personas_añadidas} personas originales insertadas desde Personal.csv.")
+            print(f"DEBUG: {len(personas_a_añadir)} personas originales insertadas desde Personal.csv.")
         else:
-            print("DEBUG: No se encontraron nuevas personas en Personal.csv para insertar o ya existían en la DB.")
+            print("DEBUG: Personal.csv no contenía personas para insertar.")
     except FileNotFoundError:
         print("ERROR: Personal.csv no encontrado en el servidor de Render. No se pudieron cargar personas originales.")
+        db.session.rollback()
     except Exception as e:
         db.session.rollback()
         print(f"ERROR: Fallo al cargar personal desde CSV: {e}")
+
+    print("DEBUG: Borrando datos existentes de Equipos para recargar desde CSV...")
+    db.session.query(Equipo).delete()
+    db.session.commit()
+    print("DEBUG: Datos de Equipos borrados.")
 
     print("DEBUG: Intentando cargar datos de Equipos desde Equipos.csv...")
     try:
         df_equipos_original = pd.read_csv(os.path.join(BASE_DIR, 'Equipos.csv'), delimiter=';')
         equipos_a_añadir = []
         for index, row in df_equipos_original.iterrows():
-            existing_equipo = Equipo.query.filter_by(nombre_equipo=row['Nombre Equipo']).first()
-            if not existing_equipo:
-                new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
-                equipos_a_añadir.append(new_equipo)
-            if equipos_a_añadir:
-                db.session.add_all(equipos_a_añadir)
-                db.session.commit()
-                print(f"DEBUG: {len(equipos_a_añadir)} equipos originales insertados desde Equipos.csv.")
-            else:
-                print("DEBUG: No se encontraron nuevos equipos en Equipos.csv para insertar o ya existían en la DB.")
+            new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
+            equipos_a_añadir.append(new_equipo)
+        if equipos_a_añadir:
+            db.session.add_all(equipos_a_añadir)
+            db.session.commit()
+            print(f"DEBUG: {len(equipos_a_añadir)} equipos originales insertados desde Equipos.csv.")
+        else:
+            print("DEBUG: Equipos.csv no contenía equipos para insertar.")
     except FileNotFoundError:
         print("ERROR: Equipos.csv no encontrado en el servidor de Render. No se pudieron cargar equipos originales.")
     except Exception as e:
         db.session.rollback()
         print(f"ERROR: Fallo al cargar equipos desde CSV: {e}")
+    # --- FIN: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
 
     print(f"DEBUG: La tabla 'personal' tiene {Personal.query.count()} registros al final del startup.")
     print(f"DEBUG: La tabla 'equipo' tiene {Equipo.query.count()} registros al final del startup.")
 
 @app.route('/')
 def index():
-    registros_db = Registro.query.all()
+    responsable_filter = request.args.get('responsable_filter')
+    pc_filter = request.args.get('pc_filter')
+
+    query = Registro.query
+
+    if responsable_filter:
+        query = query.filter(db.or_(
+            Registro.id_personal_salida.ilike(f'%{responsable_filter}%'),
+            Registro.id_personal_devolucion.ilike(f'%{responsable_filter}%')
+        ))
+    
+    if pc_filter:
+        query = query.filter(Registro.nombre_equipo.ilike(f'%{pc_filter}%'))
+
+    registros_db = query.all()
     personal_db = Personal.query.all()
     equipos_db = Equipo.query.all()
 
     registros_para_html = []
     for reg in registros_db:
-        # Convertir a la hora de Buenos Aires antes de formatear para HTML
         fecha_salida_local = reg.fecha_hora_salida.astimezone(BUENOS_AIRES_TZ) if reg.fecha_hora_salida else None
         fecha_devolucion_local = reg.fecha_hora_devolucion.astimezone(BUENOS_AIRES_TZ) if reg.fecha_hora_devolucion else None
 
@@ -129,21 +151,22 @@ def index():
     return render_template('index.html',
                            personal=personal_para_html,
                            equipos=equipos_para_html,
-                           registros=registros_para_html)
+                           registros=registros_para_html,
+                           responsable_filter=responsable_filter,
+                           pc_filter=pc_filter)
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
     equipo_nombre = request.form['equipo_id']
     personal_nombre_salida = request.form['personal_id_salida']
     
-    # Obtener la hora actual en UTC y luego convertirla a la zona horaria deseada para guardar o mostrar
-    fecha_hora_salida_utc = datetime.now(timezone.utc) # Guardar en UTC en la DB (recomendado)
+    fecha_hora_salida_utc = datetime.now(timezone.utc)
 
     nuevo_registro = Registro(
-        nombre_usuario=request.form['nombre_usuario'], # Directamente desde el form
+        nombre_usuario=request.form['nombre_usuario'],
         nombre_equipo=equipo_nombre,
         id_personal_salida=personal_nombre_salida,
-        fecha_hora_salida=fecha_hora_salida_utc, # Usar la hora UTC
+        fecha_hora_salida=fecha_hora_salida_utc,
         estado='Pendiente'
     )
     db.session.add(nuevo_registro)
@@ -156,13 +179,12 @@ def registrar_devolucion():
     registro_id = request.form['registro_id']
     personal_nombre_devolucion = request.form['personal_id_devolucion']
     
-    # Obtener la hora actual en UTC para la devolución
-    fecha_hora_devolucion_utc = datetime.now(timezone.utc) # Guardar en UTC
+    fecha_hora_devolucion_utc = datetime.now(timezone.utc)
 
     registro = Registro.query.get(registro_id)
     if registro:
         registro.id_personal_devolucion = personal_nombre_devolucion
-        registro.fecha_hora_devolucion = fecha_hora_devolucion_utc # Usar la hora UTC
+        registro.fecha_hora_devolucion = fecha_hora_devolucion_utc,
         registro.estado = 'Completo'
         db.session.commit()
 

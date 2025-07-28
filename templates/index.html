@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-brand">Guardían Digital</div>
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('index') }}">Inicio</a></li>
+            </ul>
+    </nav>
+
     <h1>Sistema Guardián Digital</h1>
 
     <div class="container">
@@ -32,6 +39,22 @@
             <input type="text" id="nombre_usuario" name="nombre_usuario" required><br>
 
             <input type="submit" value="Registrar Salida">
+        </form>
+    </div>
+
+    <div class="container filter-container">
+        <h2>Buscar Registros</h2>
+        <form action="{{ url_for('index') }}" method="GET" class="filter-form">
+            <label for="responsable_filter">Filtrar por Responsable:</label>
+            <input type="text" id="responsable_filter" name="responsable_filter" value="{{ responsable_filter or '' }}" placeholder="Nombre del responsable">
+
+            <label for="pc_filter">Filtrar por PC:</label>
+            <input type="text" id="pc_filter" name="pc_filter" value="{{ pc_filter or '' }}" placeholder="Ej. PC-01">
+
+            <input type="submit" value="Aplicar Filtros">
+            {% if responsable_filter or pc_filter %}
+                <a href="{{ url_for('index') }}" class="clear-filters-btn">Limpiar Filtros</a>
+            {% endif %}
         </form>
     </div>
 
