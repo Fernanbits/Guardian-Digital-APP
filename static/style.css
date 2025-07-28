@@ -1,0 +1,205 @@
+/* Estilos generales */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #eef1f4; /* Un gris azulado suave */
+    color: #333;
+    line-height: 1.6;
+}
+
+h1, h2 {
+    color: #2c3e50; /* Azul oscuro */
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* Contenedores principales */
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Formularios */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espacio entre elementos del formulario */
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fcfcfc;
+}
+
+form label {
+    font-weight: 600;
+    color: #4a6c89;
+    margin-bottom: 5px;
+}
+
+form input[type="text"],
+form select {
+    width: 100%; /* Ocupa todo el ancho disponible del contenedor */
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+    background-color: #f8f8f8;
+}
+
+form input[type="text"]:focus,
+form select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    outline: none;
+}
+
+form input[type="submit"] {
+    background-color: #007bff; /* Azul brillante */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+    align-self: flex-end; /* Alinea el botón a la derecha */
+}
+
+form input[type="submit"]:hover {
+    background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+}
+
+/* Tablas */
+table {
+    width: 100%;
+    border-collapse: separate; /* Para que border-radius funcione en thead/tbody */
+    border-spacing: 0;
+    margin-top: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    overflow: hidden; /* Para que el border-radius se aplique a los bordes internos */
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #f2f2f2;
+    color: #555;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9; /* Rayas para facilitar la lectura */
+}
+
+tbody tr:hover {
+    background-color: #eaf6ff; /* Resaltar fila al pasar el mouse */
+}
+
+/* Estilos para el formulario de devolución en línea dentro de la tabla */
+.inline-devolucion-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background-color: #f3f7fa; /* Un azul muy claro */
+    border-radius: 6px;
+    border: 1px solid #e0e6ec;
+}
+
+.inline-devolucion-form select,
+.inline-devolucion-form input[type="submit"] {
+    width: auto; /* Permite que los elementos se ajusten a su contenido */
+    max-width: 200px; /* Ancho máximo para que no se extiendan demasiado */
+    margin-bottom: 0;
+}
+
+/* Badges de estado */
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.status-pendiente { background-color: #ffc107; color: #333; } /* Amarillo más cálido */
+.status-completo { background-color: #28a745; } /* Verde vibrante */
+
+/* Estilos de error (si los usas) */
+.error {
+    color: #dc3545; /* Rojo de Bootstrap */
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* Responsividad básica */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    .container {
+        padding: 20px;
+    }
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    tr { border: 1px solid #ddd; margin-bottom: 10px; border-radius: 8px;}
+    td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+    td:before {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: 600;
+        color: #555;
+    }
+    /* Añadir "encabezados" a las celdas para pantallas pequeñas */
+    td:nth-of-type(1):before { content: "ID Registro:"; }
+    td:nth-of-type(2):before { content: "Fecha Salida:"; }
+    td:nth-of-type(3):before { content: "Usuario:"; }
+    td:nth-of-type(4):before { content: "Equipo:"; }
+    td:nth-of-type(5):before { content: "Personal Salida:"; }
+    td:nth-of-type(6):before { content: "Fecha Devolución:"; }
+    td:nth-of-type(7):before { content: "Personal Devolución:"; }
+    td:nth-of-type(8):before { content: "Estado:"; }
+    td:nth-of-type(9):before { content: "Acciones:"; }
+
+    .inline-devolucion-form {
+        align-items: flex-start;
+        width: 100%;
+    }
+}
