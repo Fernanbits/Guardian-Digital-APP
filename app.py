@@ -45,6 +45,28 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
+    # --- INICIO: LÍNEAS TEMPORALES PARA DEPURACIÓN DE DB ---
+    # Añadir un personal de prueba si la tabla está vacía
+    if Personal.query.count() == 0:
+        print("DEBUG: La tabla 'personal' está vacía. Insertando personal de prueba...")
+        test_personal = Personal(nombre_responsable="Test Person", email="test@example.com")
+        db.session.add(test_personal)
+        db.session.commit()
+        print("DEBUG: Personal de prueba insertado.")
+    else:
+        print(f"DEBUG: La tabla 'personal' ya tiene {Personal.query.count()} registros.")
+
+    # Añadir un equipo de prueba si la tabla está vacía
+    if Equipo.query.count() == 0:
+        print("DEBUG: La tabla 'equipo' está vacía. Insertando equipo de prueba...")
+        test_equipo = Equipo(nombre_equipo="Test PC", descripcion="Equipo de prueba")
+        db.session.add(test_equipo)
+        db.session.commit()
+        print("DEBUG: Equipo de prueba insertado.")
+    else:
+        print(f"DEBUG: La tabla 'equipo' ya tiene {Equipo.query.count()} registros.")
+    # --- FIN: LÍNEAS TEMPORALES PARA DEPURACIÓN DE DB ---
+
 @app.route('/')
 def index():
     registros_db = Registro.query.all()
@@ -67,16 +89,15 @@ def index():
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
     equipos_para_html = [{'Nombre Equipo': e.nombre_equipo} for e in equipos_db]
 
-    # --- INICIO: LÍNEAS TEMPORALES PARA DEPURACIÓN ---
-    print(f"DEBUG: Número de personal encontrado: {len(personal_db)}")
-    print(f"DEBUG: Número de equipos encontrado: {len(equipos_db)}")
-    # --- FIN: LÍNEAS TEMPORALES PARA DEPURACIÓN ---
+    # --- LÍNEAS TEMPORALES PARA DEPURACIÓN EN index() ---
+    print(f"DEBUG: Número de personal enviado al HTML: {len(personal_db)}")
+    print(f"DEBUG: Número de equipos enviado al HTML: {len(equipos_db)}")
+    # --- FIN: LÍNEAS TEMPORALES PARA DEPURACIÓN EN index() ---
 
     return render_template('index.html',
-                        personal=personal_para_html,
-                        equipos=equipos_para_html,
-                        registros=registros_para_html)
-
+                           personal=personal_para_html,
+                           equipos=equipos_para_html,
+                           registros=registros_para_html)
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
