@@ -5,10 +5,10 @@ import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import or_ # Importar or_ para el filtro de responsable
+from sqlalchemy import or_
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here' # Necesario para usar flash messages
+app.secret_key = 'your_secret_key_here'
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -44,7 +44,7 @@ class Registro(db.Model):
     fecha_hora_devolucion = db.Column(db.DateTime, nullable=True)
     id_personal_devolucion = db.Column(db.String(100), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default='Pendiente')
-    is_archived = db.Column(db.Boolean, default=False) # NUEVO: Campo para archivar
+    # is_archived = db.Column(db.Boolean, default=False) # COMENTADO TEMPORALMENTE
 
     def __repr__(self):
         return f"<Registro {self.id} - {self.nombre_equipo}>"
@@ -52,19 +52,74 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
+    # --- INICIO: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
+    # !!! ATENCIÓN: ESTO BORRA Y VUELVE A INSERTAR PERSONAL Y EQUIPOS EN CADA INICIO !!!
+    # Lo eliminaremos al final.
+
+    print("DEBUG: Borrando datos existentes de Personal para recargar desde CSV...")
+    db.session.query(Personal).delete()
+    db.session.commit()
+    print("DEBUG: Datos de Personal borrados.")
+
+    print("DEBUG: Intentando cargar datos de Personal desde Personal.csv...")
+    try:
+        df_personal_original = pd.read_csv(os.path.join(BASE_DIR, 'Personal.csv'), delimiter=';')
+        personas_a_añadir = []
+        for index, row in df_personal_original.iterrows():
+            new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
+            personas_a_añadir.append(new_personal)
+        if personas_a_añadir:
+            db.session.add_all(personas_a_añadir)
+            db.session.commit()
+            print(f"DEBUG: {len(personas_a_añadir)} personas originales insertadas desde Personal.csv.")
+        else:
+            print("DEBUG: Personal.csv no contenía personas para insertar.")
+    except FileNotFoundError:
+        print("ERROR: Personal.csv no encontrado en el servidor de Render. No se pudieron cargar personas originales.")
+        db.session.rollback()
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR: Fallo al cargar personal desde CSV: {e}")
+
+    print("DEBUG: Borrando datos existentes de Equipos para recargar desde CSV...")
+    db.session.query(Equipo).delete()
+    db.session.commit()
+    print("DEBUG: Datos de Equipos borrados.")
+
+    print("DEBUG: Intentando cargar datos de Equipos desde Equipos.csv...")
+    try:
+        df_equipos_original = pd.read_csv(os.path.join(BASE_DIR, 'Equipos.csv'), delimiter=';')
+        equipos_a_añadir = []
+        for index, row in df_equipos_original.iterrows():
+            new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
+            equipos_a_añadir.append(new_equipo)
+        if equipos_a_añadir:
+            db.session.add_all(equipos_a_añadir)
+            db.session.commit()
+            print(f"DEBUG: {len(equipos_a_añadir)} equipos originales insertados desde Equipos.csv.")
+        else:
+            print("DEBUG: Equipos.csv no contenía equipos para insertar.")
+    except FileNotFoundError:
+        print("ERROR: Equipos.csv no encontrado en el servidor de Render. No se pudieron cargar equipos originales.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR: Fallo al cargar equipos desde CSV: {e}")
+    # --- FIN: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
+
+    print(f"DEBUG: La tabla 'personal' tiene {Personal.query.count()} registros al final del startup.")
+    print(f"DEBUG: La tabla 'equipo' tiene {Equipo.query.count()} registros al final del startup.")
+
 @app.route('/')
 def index():
     responsable_filter = request.args.get('responsable_filter')
     pc_filter = request.args.get('pc_filter')
-    show_archived = request.args.get('show_archived', 'off') == 'on' # NUEVO: Filtro para mostrar archivados
+    # show_archived = request.args.get('show_archived', 'off') == 'on' # COMENTADO
 
     query = Registro.query
 
-    # Filtrar por estado de archivo
-    if not show_archived:
-        query = query.filter_by(is_archived=False) # Por defecto, no mostrar archivados
+    # if not show_archived: # COMENTADO
+    #     query = query.filter_by(is_archived=False) # COMENTADO
     
-    # Aplicar filtros de búsqueda
     if responsable_filter:
         query = query.filter(or_(
             Registro.id_personal_salida.ilike(f'%{responsable_filter}%'),
@@ -74,14 +129,12 @@ def index():
     if pc_filter:
         query = query.filter(Registro.nombre_equipo.ilike(f'%{pc_filter}%'))
 
-    # Ordenar por fecha de salida descendente (más reciente primero)
     query = query.order_by(Registro.fecha_hora_salida.desc())
 
-    # Limitar a los últimos 35 registros si no hay filtros activos Y no se piden archivados
-    if not responsable_filter and not pc_filter and not show_archived:
+    if not responsable_filter and not pc_filter: # show_archived ya no es un filtro activo aquí
         registros_db = query.limit(35).all()
     else:
-        registros_db = query.all() # Mostrar todos los que cumplan el filtro si hay filtros
+        registros_db = query.all()
 
     personal_db = Personal.query.all()
     equipos_db = Equipo.query.all()
@@ -100,11 +153,14 @@ def index():
             'Fecha y Hora Devolucion': fecha_devolucion_local.strftime('%d/%m/%Y %H:%M') if fecha_devolucion_local else '',
             'ID Personal Devolucion': reg.id_personal_devolucion,
             'Estado': reg.estado,
-            'is_archived': reg.is_archived
+            # 'is_archived': reg.is_archived # COMENTADO TEMPORALMENTE
         })
 
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
     equipos_para_html = [{'Nombre Equipo': e.nombre_equipo} for e in equipos_db]
+
+    print(f"DEBUG: Número de personal enviado al HTML: {len(personal_db)}")
+    print(f"DEBUG: Número de equipos enviado al HTML: {len(equipos_db)}")
 
     return render_template('index.html',
                            personal=personal_para_html,
@@ -112,7 +168,8 @@ def index():
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
                            pc_filter=pc_filter,
-                           show_archived=show_archived) # Pasar el estado del filtro al HTML
+                           # show_archived=show_archived # COMENTADO
+                           )
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
@@ -126,8 +183,8 @@ def registrar_salida():
         nombre_equipo=equipo_nombre,
         id_personal_salida=personal_nombre_salida,
         fecha_hora_salida=fecha_hora_salida_utc,
-        estado='Pendiente',
-        is_archived=False # Nuevo registro no está archivado por defecto
+        estado='Pendiente'
+        # is_archived=False # COMENTADO TEMPORALMENTE
     )
     db.session.add(nuevo_registro)
     db.session.commit()
@@ -144,7 +201,7 @@ def registrar_devolucion():
     registro = Registro.query.get(registro_id)
     if registro:
         registro.id_personal_devolucion = personal_nombre_devolucion
-        registro.fecha_hora_devolucion = fecha_hora_devolucion_utc # Corregido: sin coma extra
+        registro.fecha_hora_devolucion = fecha_hora_devolucion_utc
         registro.estado = 'Completo'
         db.session.commit()
         flash('Devolución de equipo registrada con éxito!', 'success')
@@ -154,9 +211,9 @@ def registrar_devolucion():
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
-    selected_records_ids = request.form.getlist('selected_records') # Lista de IDs de registros
+    selected_records_ids = request.form.getlist('selected_records')
     responsible_devolucion = request.form['batch_responsible_devolucion']
-    batch_action = request.form['batch_action'] # 'complete' o 'archive'
+    batch_action = request.form['batch_action']
 
     if not selected_records_ids:
         flash('No se seleccionó ningún registro para la acción en lote.', 'warning')
@@ -167,18 +224,17 @@ def batch_update():
         registro = Registro.query.get(record_id)
         if registro:
             if batch_action == 'complete':
-                # Solo completar si está pendiente
                 if registro.estado == 'Pendiente':
                     registro.id_personal_devolucion = responsible_devolucion
                     registro.fecha_hora_devolucion = datetime.now(timezone.utc)
                     registro.estado = 'Completo'
                     updated_count += 1
-            elif batch_action == 'archive':
-                registro.is_archived = True
-                updated_count += 1
-            elif batch_action == 'unarchive': # Opción para desarchivar si es necesario
-                registro.is_archived = False
-                updated_count += 1
+            # elif batch_action == 'archive': # COMENTADO
+            #     registro.is_archived = True # COMENTADO
+            #     updated_count += 1 # COMENTADO
+            # elif batch_action == 'unarchive': # COMENTADO
+            #     registro.is_archived = False # COMENTADO
+            #     updated_count += 1 # COMENTADO
     
     db.session.commit()
     flash(f'{updated_count} registros actualizados en lote como {batch_action}.', 'success')
