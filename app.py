@@ -67,10 +67,16 @@ def index():
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
     equipos_para_html = [{'Nombre Equipo': e.nombre_equipo} for e in equipos_db]
 
+    # --- INICIO: LÍNEAS TEMPORALES PARA DEPURACIÓN ---
+    print(f"DEBUG: Número de personal encontrado: {len(personal_db)}")
+    print(f"DEBUG: Número de equipos encontrado: {len(equipos_db)}")
+    # --- FIN: LÍNEAS TEMPORALES PARA DEPURACIÓN ---
+
     return render_template('index.html',
-                           personal=personal_para_html,
-                           equipos=equipos_para_html,
-                           registros=registros_para_html)
+                        personal=personal_para_html,
+                        equipos=equipos_para_html,
+                        registros=registros_para_html)
+
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
