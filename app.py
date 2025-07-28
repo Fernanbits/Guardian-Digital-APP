@@ -46,46 +46,65 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
+    # --- INICIO: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
+    # !!! ATENCIÓN: ESTO BORRA Y VUELVE A INSERTAR PERSONAL Y EQUIPOS EN CADA INICIO !!!
+    # Lo eliminaremos al final.
+
+    print("DEBUG: Borrando datos existentes de Personal para recargar desde CSV...")
+    db.session.query(Personal).delete()
+    db.session.commit()
+    print("DEBUG: Datos de Personal borrados.")
+
     print("DEBUG: Intentando cargar datos de Personal desde Personal.csv...")
     try:
         df_personal_original = pd.read_csv(os.path.join(BASE_DIR, 'Personal.csv'), delimiter=';')
-        personas_añadidas = 0
+        personas_a_añadir = []
         for index, row in df_personal_original.iterrows():
-            existing_personal = Personal.query.filter_by(nombre_responsable=row['Nombre Responsable']).first()
-            if not existing_personal:
-                new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
-                db.session.add(new_personal)
-                personas_añadidas += 1
-        if personas_añadidas > 0:
+            # Quitamos el 'if not existing_personal' para forzar reinserción (después de borrar)
+            new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
+            personas_a_añadir.append(new_personal)
+        if personas_a_añadir:
+            db.session.add_all(personas_a_añadir)
             db.session.commit()
-            print(f"DEBUG: {personas_añadidas} personas originales insertadas desde Personal.csv.")
+            print(f"DEBUG: {len(personas_a_añadir)} personas originales insertadas desde Personal.csv.")
         else:
-            print("DEBUG: No se encontraron nuevas personas en Personal.csv para insertar o ya existían en la DB.")
+            print("DEBUG: Personal.csv no contenía personas para insertar.")
     except FileNotFoundError:
         print("ERROR: Personal.csv no encontrado en el servidor de Render. No se pudieron cargar personas originales.")
+        db.session.rollback()
     except Exception as e:
         db.session.rollback()
         print(f"ERROR: Fallo al cargar personal desde CSV: {e}")
 
+    print("DEBUG: Borrando datos existentes de Equipos para recargar desde CSV...")
+    db.session.query(Equipo).delete()
+    db.session.commit()
+    print("DEBUG: Datos de Equipos borrados.")
+
     print("DEBUG: Intentando cargar datos de Equipos desde Equipos.csv...")
     try:
         df_equipos_original = pd.read_csv(os.path.join(BASE_DIR, 'Equipos.csv'), delimiter=';')
-        equipos_añadidos = 0
+        equipos_a_añadir = []
         for index, row in df_equipos_original.iterrows():
-            existing_equipo = Equipo.query.filter_by(nombre_equipo=row['Nombre Equipo']).first()
-            if not existing_equipo:
-                new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
-                equipos_añadidos += 1
-            if equipos_añadidos > 0:
-                db.session.commit()
-                print(f"DEBUG: {equipos_añadidos} equipos originales insertados desde Equipos.csv.")
-            else:
-                print("DEBUG: No se encontraron nuevos equipos en Equipos.csv para insertar o ya existían en la DB.")
+            # Quitamos el 'if not existing_equipo' para forzar reinserción (después de borrar)
+            new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
+            equipos_a_añadir.append(new_equipo)
+        if equipos_a_añadir:
+            db.session.add_all(equipos_a_añadir)
+            db.session.commit()
+            print(f"DEBUG: {len(equipos_a_añadir)} equipos originales insertados desde Equipos.csv.")
+        else:
+            print("DEBUG: Equipos.csv no contenía equipos para insertar.")
     except FileNotFoundError:
         print("ERROR: Equipos.csv no encontrado en el servidor de Render. No se pudieron cargar equipos originales.")
+        db.session.rollback()
     except Exception as e:
         db.session.rollback()
         print(f"ERROR: Fallo al cargar equipos desde CSV: {e}")
+    # --- FIN: CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs ---
+
+    print(f"DEBUG: La tabla 'personal' tiene {Personal.query.count()} registros al final del startup.")
+    print(f"DEBUG: La tabla 'equipo' tiene {Equipo.query.count()} registros al final del startup.")
 
 @app.route('/')
 def index():
