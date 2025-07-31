@@ -437,5 +437,18 @@ tbody tr:hover {
     background-color: #6c757d; /* Gris para archivado */
     font-size: 0.75em; /* Ligeramente más pequeño */
     margin-left: 5px; /* Espacio entre badge de estado y archivado */
+} 
+
+/* Estilos para el botón de eliminar en la tabla de gestión */
+.delete-btn {
+    background-color: #dc3545; /* Rojo */
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
 }
-/* Estilo para el badge de estado archivado */ 
+.delete-btn:hover {
+    background-color: #c82333;
+}

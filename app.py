@@ -1,11 +1,11 @@
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, flash
 import os
-import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
+import uuid
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -48,8 +48,7 @@ class Registro(db.Model):
     fecha_hora_devolucion = db.Column(db.DateTime, nullable=True)
     id_personal_devolucion = db.Column(db.String(100), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default='Pendiente')
-    # is_archived = db.Column(db.Boolean, default=False) # LÍNEA COMENTADA
-
+    # is_archived = db.Column(db.Boolean, default=False) # COMENTADO TEMPORALMENTE
 
     def __repr__(self):
         return f"<Registro {self.id} - {self.nombre_equipo}>"
@@ -57,73 +56,13 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
-    # CÓDIGO TEMPORAL PARA FORZAR CARGA DE DATOS ORIGINALES DESDE CSVs
-    # ESTO SE DEJARÁ AQUÍ HASTA QUE SE CONFIRME QUE LOS DATOS ESTÁN CARGADOS Y LUEGO SE BORRARÁ.
-
-    print("DEBUG: Borrando datos existentes de Personal para recargar desde CSV...")
-    db.session.query(Personal).delete()
-    db.session.commit()
-    print("DEBUG: Datos de Personal borrados.")
-
-    print("DEBUG: Intentando cargar datos de Personal desde Personal.csv...")
-    try:
-        df_personal_original = pd.read_csv(os.path.join(BASE_DIR, 'Personal.csv'), delimiter=';')
-        personas_a_añadir = []
-        for index, row in df_personal_original.iterrows():
-            new_personal = Personal(nombre_responsable=row['Nombre Responsable'], email=row['Email'])
-            personas_a_añadir.append(new_personal)
-        if personas_a_añadir:
-            db.session.add_all(personas_a_añadir)
-            db.session.commit()
-            print(f"DEBUG: {len(personas_a_añadir)} personas originales insertadas desde Personal.csv.")
-        else:
-            print("DEBUG: Personal.csv no contenía personas para insertar.")
-    except FileNotFoundError:
-        print("ERROR: Personal.csv no encontrado en el servidor de Render. No se pudieron cargar personas originales.")
-        db.session.rollback()
-    except Exception as e:
-        db.session.rollback()
-        print(f"ERROR: Fallo al cargar personal desde CSV: {e}")
-
-    print("DEBUG: Borrando datos existentes de Equipos para recargar desde CSV...")
-    db.session.query(Equipo).delete()
-    db.session.commit()
-    print("DEBUG: Datos de Equipos borrados.")
-
-    print("DEBUG: Intentando cargar datos de Equipos desde Equipos.csv...")
-    try:
-        df_equipos_original = pd.read_csv(os.path.join(BASE_DIR, 'Equipos.csv'), delimiter=';')
-        equipos_a_añadir = []
-        for index, row in df_equipos_original.iterrows():
-            new_equipo = Equipo(nombre_equipo=row['Nombre Equipo'], descripcion=row['Descripcion'])
-            equipos_a_añadir.append(new_equipo)
-        if equipos_a_añadir:
-            db.session.add_all(equipos_a_añadir)
-            db.session.commit()
-            print(f"DEBUG: {len(equipos_a_añadir)} equipos originales insertados desde Equipos.csv.")
-        else:
-            print("DEBUG: Equipos.csv no contenía equipos para insertar.")
-    except FileNotFoundError:
-        print("ERROR: Equipos.csv no encontrado en el servidor de Render. No se pudieron cargar equipos originales.")
-        db.session.rollback()
-    except Exception as e:
-        db.session.rollback()
-        print(f"ERROR: Fallo al cargar equipos desde CSV: {e}")
-
-    print(f"DEBUG: La tabla 'personal' tiene {Personal.query.count()} registros al final del startup.")
-    print(f"DEBUG: La tabla 'equipo' tiene {Equipo.query.count()} registros al final del startup.")
-
 @app.route('/')
 def index():
     responsable_filter = request.args.get('responsable_filter')
     pc_filter = request.args.get('pc_filter')
-    # show_archived = request.args.get('show_archived', 'off') == 'on' # COMENTADO AQUI TAMBIÉN
 
     query = Registro.query
 
-    # if not show_archived: # COMENTADO AQUI TAMBIÉN
-    #     query = query.filter_by(is_archived=False) # COMENTADO AQUI TAMBIÉN
-    
     if responsable_filter:
         query = query.filter(or_(
             Registro.id_personal_salida.ilike(f'%{responsable_filter}%'),
@@ -135,7 +74,6 @@ def index():
 
     query = query.order_by(Registro.fecha_hora_salida.desc())
 
-    # La condición de límite ya no depende de show_archived
     if not responsable_filter and not pc_filter:
         registros_db = query.limit(35).all()
     else:
@@ -158,23 +96,69 @@ def index():
             'Fecha y Hora Devolucion': fecha_devolucion_local.strftime('%d/%m/%Y %H:%M') if fecha_devolucion_local else '',
             'ID Personal Devolucion': reg.id_personal_devolucion,
             'Estado': reg.estado,
-            # 'is_archived': reg.is_archived # COMENTADO AQUI TAMBIÉN
         })
 
     personal_para_html = [{'Nombre Responsable': p.nombre_responsable} for p in personal_db]
     equipos_para_html = [{'Nombre Equipo': e.nombre_equipo} for e in equipos_db]
-
-    print(f"DEBUG: Número de personal enviado al HTML: {len(personal_db)}")
-    print(f"DEBUG: Número de equipos enviado al HTML: {len(equipos_db)}")
 
     return render_template('index.html',
                            personal=personal_para_html,
                            equipos=equipos_para_html,
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
-                           pc_filter=pc_filter,
-                           # show_archived=show_archived # COMENTADO AQUI TAMBIÉN
-                           )
+                           pc_filter=pc_filter)
+
+# --- INICIO: NUEVAS RUTAS PARA LA GESTIÓN DE PERSONAL Y EQUIPOS ---
+
+@app.route('/manage_personal')
+def manage_personal():
+    personal_list = Personal.query.all()
+    return render_template('personal_management.html', personal_list=personal_list)
+
+@app.route('/add_personal', methods=['POST'])
+def add_personal():
+    nombre_responsable = request.form['nombre_responsable']
+    email = request.form['email']
+    if nombre_responsable:
+        new_personal = Personal(nombre_responsable=nombre_responsable, email=email)
+        db.session.add(new_personal)
+        db.session.commit()
+        flash(f'Persona "{nombre_responsable}" agregada con éxito.', 'success')
+    return redirect(url_for('manage_personal'))
+
+@app.route('/delete_personal/<int:id>', methods=['POST'])
+def delete_personal(id):
+    personal_to_delete = Personal.query.get_or_404(id)
+    db.session.delete(personal_to_delete)
+    db.session.commit()
+    flash(f'Persona "{personal_to_delete.nombre_responsable}" eliminada con éxito.', 'success')
+    return redirect(url_for('manage_personal'))
+
+@app.route('/manage_equipment')
+def manage_equipment():
+    equipment_list = Equipo.query.all()
+    return render_template('equipment_management.html', equipment_list=equipment_list)
+
+@app.route('/add_equipment', methods=['POST'])
+def add_equipment():
+    nombre_equipo = request.form['nombre_equipo']
+    descripcion = request.form['descripcion']
+    if nombre_equipo:
+        new_equipment = Equipo(nombre_equipo=nombre_equipo, descripcion=descripcion)
+        db.session.add(new_equipment)
+        db.session.commit()
+        flash(f'Equipo "{nombre_equipo}" agregado con éxito.', 'success')
+    return redirect(url_for('manage_equipment'))
+
+@app.route('/delete_equipment/<int:id>', methods=['POST'])
+def delete_equipment(id):
+    equipment_to_delete = Equipo.query.get_or_404(id)
+    db.session.delete(equipment_to_delete)
+    db.session.commit()
+    flash(f'Equipo "{equipment_to_delete.nombre_equipo}" eliminado con éxito.', 'success')
+    return redirect(url_for('manage_equipment'))
+
+# --- FIN: NUEVAS RUTAS PARA LA GESTIÓN DE PERSONAL Y EQUIPOS ---
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
@@ -189,7 +173,6 @@ def registrar_salida():
         id_personal_salida=personal_nombre_salida,
         fecha_hora_salida=fecha_hora_salida_utc,
         estado='Pendiente'
-        # is_archived=False # COMENTADO AQUI TAMBIÉN
     )
     db.session.add(nuevo_registro)
     db.session.commit()
@@ -234,17 +217,10 @@ def batch_update():
                     registro.fecha_hora_devolucion = datetime.now(timezone.utc)
                     registro.estado = 'Completo'
                     updated_count += 1
-            # elif batch_action == 'archive': # COMENTADO
-            #     registro.is_archived = True # COMENTADO
-            #     updated_count += 1 # COMENTADO
-            # elif batch_action == 'unarchive': # COMENTADO
-            #     registro.is_archived = False # COMENTADO
-            #     updated_count += 1 # COMENTADO
     
     db.session.commit()
     flash(f'{updated_count} registros actualizados en lote como {batch_action}.', 'success')
     return redirect(url_for('index'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)
