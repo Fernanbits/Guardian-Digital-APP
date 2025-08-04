@@ -8,10 +8,8 @@ from sqlalchemy import or_
 import uuid
 
 app = Flask(__name__)
-# ¡IMPORTANTE! Cambia esta clave secreta por una cadena aleatoria y segura.
 app.secret_key = 'your_secret_key_here'
 
-# --- Configuración de credenciales de administrador (simple, para un solo admin) ---
 ADMIN_USER = 'admin'
 ADMIN_PASSWORD = 'password'
 
@@ -219,9 +217,7 @@ def registrar_salida():
 
 @app.route('/registrar_devolucion', methods=['POST'])
 def registrar_devolucion():
-    if not session.get('is_admin'):
-        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
-        return redirect(url_for('login'))
+    # CUALQUIER usuario puede registrar una devolución
     registro_id = request.form['registro_id']
     personal_nombre_devolucion = request.form['personal_id_devolucion']
     
@@ -240,9 +236,7 @@ def registrar_devolucion():
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
-    if not session.get('is_admin'):
-        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
-        return redirect(url_for('login'))
+    # CUALQUIER usuario puede usar esta función para completar un lote
     selected_records_ids = request.form.getlist('selected_records')
     responsible_devolucion = request.form['batch_responsible_devolucion']
     batch_action = request.form['batch_action']
