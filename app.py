@@ -68,7 +68,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Credenciales incorrectas. Inténtalo de nuevo.', 'danger')
-    return render_template('login.html', datetime=datetime)
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
@@ -127,8 +127,7 @@ def index():
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
                            pc_filter=pc_filter,
-                           is_admin=session.get('is_admin'),
-                           datetime=datetime)
+                           is_admin=session.get('is_admin'))
 
 @app.route('/manage_personal')
 def manage_personal():
@@ -136,7 +135,7 @@ def manage_personal():
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
     personal_list = Personal.query.all()
-    return render_template('personal_management.html', personal_list=personal_list, is_admin=True, datetime=datetime)
+    return render_template('personal_management.html', personal_list=personal_list, is_admin=True)
 
 @app.route('/add_personal', methods=['POST'])
 def add_personal():
@@ -169,7 +168,7 @@ def manage_equipment():
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
     equipment_list = Equipo.query.all()
-    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True, datetime=datetime)
+    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True)
 
 @app.route('/add_equipment', methods=['POST'])
 def add_equipment():
@@ -196,6 +195,17 @@ def delete_equipment(id):
     flash(f'Equipo "{equipment_to_delete.nombre_equipo}" eliminado con éxito.', 'success')
     return redirect(url_for('manage_equipment'))
 
+@app.route('/delete_registro/<string:id>', methods=['POST'])
+def delete_registro(id):
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
+    registro_to_delete = Registro.query.get_or_404(id)
+    db.session.delete(registro_to_delete)
+    db.session.commit()
+    flash('Registro eliminado con éxito.', 'success')
+    return redirect(url_for('index'))
+
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
     equipo_nombre = request.form['equipo_id']
@@ -220,7 +230,6 @@ def registrar_devolucion():
     registro_id = request.form['registro_id']
     personal_nombre_devolucion = request.form['personal_id_devolucion']
     
-    # NUEVO: Validar que se seleccionó un responsable
     if not personal_nombre_devolucion:
         flash('Error: Debe seleccionar un responsable para la devolución.', 'danger')
         return redirect(url_for('index'))
@@ -240,6 +249,9 @@ def registrar_devolucion():
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     selected_records_ids = request.form.getlist('selected_records')
     responsible_devolucion = request.form['batch_responsible_devolucion']
     batch_action = request.form['batch_action']
@@ -248,7 +260,6 @@ def batch_update():
         flash('No se seleccionó ningún registro para la acción en lote.', 'warning')
         return redirect(url_for('index'))
 
-    # NUEVO: Validar que se seleccionó un responsable para el lote
     if batch_action == 'complete' and not responsible_devolucion:
         flash('Error: Debe seleccionar un responsable para la devolución en lote.', 'danger')
         return redirect(url_for('index'))
