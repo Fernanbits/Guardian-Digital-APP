@@ -197,7 +197,6 @@ def delete_equipment(id):
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
-    # Cualquier usuario puede registrar una salida
     equipo_nombre = request.form['equipo_id']
     personal_nombre_salida = request.form['personal_id_salida']
     
@@ -217,7 +216,6 @@ def registrar_salida():
 
 @app.route('/registrar_devolucion', methods=['POST'])
 def registrar_devolucion():
-    # CUALQUIER usuario puede registrar una devolución
     registro_id = request.form['registro_id']
     personal_nombre_devolucion = request.form['personal_id_devolucion']
     
@@ -236,7 +234,6 @@ def registrar_devolucion():
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
-    # CUALQUIER usuario puede usar esta función para completar un lote
     selected_records_ids = request.form.getlist('selected_records')
     responsible_devolucion = request.form['batch_responsible_devolucion']
     batch_action = request.form['batch_action']

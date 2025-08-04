@@ -3,6 +3,9 @@
 body {
     background-color: #f8f9fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh; /* Asegura que el footer esté abajo */
+    display: flex;
+    flex-direction: column;
 }
 
 .navbar {
@@ -10,13 +13,14 @@ body {
 }
 
 .navbar-brand img {
-    height: 40px;
+    height: 50px; /* Logo más grande */
 }
 
 /* Page content container */
 .page-content {
     padding-top: 30px;
     padding-bottom: 30px;
+    flex-grow: 1; /* Permite que el contenido ocupe el espacio disponible */
 }
 
 /* Custom form styling */
@@ -65,305 +69,11 @@ body {
     border: 1px solid #f5c6cb;
 }
 
-/* Estilos para la barra de navegación (Menu) */
-.navbar {
+/* Footer styling */
+.footer {
     background-color: #2c3e50;
     color: white;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-}
-
-.navbar-brand {
-    font-size: 1.8em;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-}
-.navbar-brand img {
-    height: 40px;
-}
-.hamburger {
-    display: none;
-}
-
-.navbar-nav {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    gap: 25px;
-}
-
-.navbar-nav a {
-    color: white;
-    text-decoration: none;
-    font-size: 1.1em;
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
-
-.navbar-nav a:hover {
-    color: #007bff;
-}
-
-/* Estilos para el contenedor de filtros */
-.filter-container {
-    padding: 25px;
-    background-color: #f8fbfd;
-    border-color: #e6f0f5;
-}
-
-.filter-form {
-    margin-top: 0;
-    padding: 0;
-    border: none;
-    background-color: transparent;
-    display: grid;
-    grid-template-columns: auto 1fr auto 1fr auto;
-    gap: 15px 20px;
-    align-items: center;
-}
-.filter-form label {
-    margin-bottom: 0;
-    white-space: nowrap;
-}
-.filter-form input[type="text"] {
-    width: 100%;
-}
-.filter-form input[type="submit"] {
-    width: auto;
-    margin: 0;
-    padding: 10px 20px;
-    grid-column: span 1;
-}
-.clear-filters-btn {
+    padding: 20px 0;
     text-align: center;
-    display: block;
-    color: #007bff;
-    text-decoration: none;
-    font-size: 0.95em;
-    transition: color 0.3s ease;
-    white-space: nowrap;
-}
-.clear-filters-btn:hover {
-    color: #0056b3;
-    text-decoration: underline;
-}
-
-/* Estilos para el formulario de acciones en lote */
-.batch-update-form {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background-color: #fcfcfc;
-}
-.batch-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 15px;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-}
-.batch-actions label {
-    margin-bottom: 0;
-    white-space: nowrap;
-}
-.batch-actions select,
-.batch-actions input[type="submit"] {
-    width: auto;
-    flex-grow: 1;
-    margin: 0;
-}
-#select_all_records {
-    width: auto;
-    margin-right: 5px;
-}
-
-/* Estilo para registros archivados en la tabla */
-.status-archived {
-    background-color: #6c757d;
-    font-size: 0.75em;
-    margin-left: 5px;
-}
-
-/* Flash Messages */
-.flash-messages {
-    list-style: none;
-    padding: 10px 20px;
-    margin: 10px auto 20px auto;
-    max-width: 900px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.flash-messages li {
-    margin: 5px 0;
-    padding: 0;
-}
-.flash-messages .success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-.flash-messages .warning {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeeba;
-}
-.flash-messages .danger {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-/* Responsividad general */
-@media (max-width: 768px) {
-    .page-content {
-        padding: 10px;
-    }
-    .container {
-        padding: 15px;
-        margin-bottom: 20px;
-    }
-    h1 {
-        font-size: 1.8em;
-    }
-    h2 {
-        font-size: 1.4em;
-        margin-bottom: 15px;
-    }
-
-    /* Navbar en móvil */
-    .navbar {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 10px 20px;
-        position: relative;
-    }
-    .navbar-brand {
-        margin-bottom: 0;
-    }
-    .hamburger {
-        display: block;
-        position: absolute;
-        right: 20px;
-        top: 15px;
-    }
-    .navbar-nav {
-        flex-direction: column;
-        align-items: flex-start;
-        display: none;
-        width: 100%;
-        margin-top: 10px;
-        max-height: 0;
-        overflow: hidden;
-        transition: all 0.3s ease-in-out;
-    }
-    .navbar-nav.active {
-        display: flex;
-        max-height: 200px;
-    }
-    .navbar-nav li {
-        margin: 5px 0;
-        width: 100%;
-    }
-    .navbar-nav a {
-        padding: 10px 15px;
-        background-color: #34495e;
-        display: block;
-        border-radius: 5px;
-    }
-
-    /* Filtros en móvil */
-    .filter-form {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    .filter-form label,
-    .filter-form input[type="text"],
-    .filter-form input[type="submit"],
-    .clear-filters-btn {
-        grid-column: auto;
-        width: 100%;
-        margin-top: 5px;
-    }
-    .filter-form label {
-        text-align: left;
-        margin-top: 10px;
-    }
-    .filter-form label:first-of-type {
-        margin-top: 0;
-    }
-
-    /* Tabla en móvil */
-    table {
-        display: block;
-        overflow-x: auto;
-        border-radius: 8px;
-    }
-    thead {
-        display: none;
-    }
-    tbody tr {
-        display: block;
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    td {
-        display: block;
-        text-align: left;
-        padding-left: 0;
-        position: relative;
-        padding-bottom: 10px;
-        border-bottom: none;
-    }
-    td:before {
-        content: attr(data-label);
-        position: relative;
-        display: block;
-        font-weight: bold;
-        color: #555;
-        margin-bottom: 5px;
-        padding-right: 10px;
-        white-space: nowrap;
-    }
-    td:last-child {
-        padding-bottom: 0;
-    }
-    td:first-child {
-        text-align: center;
-        padding-top: 0;
-        padding-bottom: 0;
-        min-height: 20px;
-    }
-    td:first-child:before {
-        display: none;
-    }
-
-    /* Acciones en lote en móvil */
-    .batch-actions {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        width: 100%;
-    }
-    .batch-actions select,
-    .batch-actions input[type="submit"] {
-        width: 100%;
-        margin-top: 0;
-    }
-    .batch-actions label {
-        text-align: left;
-    }
+    margin-top: auto; /* Empuja el footer al fondo */
 }
