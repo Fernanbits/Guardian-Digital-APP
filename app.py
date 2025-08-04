@@ -1,5 +1,5 @@
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -8,7 +8,12 @@ from sqlalchemy import or_
 import uuid
 
 app = Flask(__name__)
+# ¡IMPORTANTE! Cambia esta clave secreta por una cadena aleatoria y segura.
 app.secret_key = 'your_secret_key_here'
+
+# --- Configuración de credenciales de administrador (simple, para un solo admin) ---
+ADMIN_USER = 'admin'
+ADMIN_PASSWORD = 'password'
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -53,6 +58,25 @@ class Registro(db.Model):
 
 with app.app_context():
     db.create_all()
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if username == ADMIN_USER and password == ADMIN_PASSWORD:
+            session['is_admin'] = True
+            flash('Inicio de sesión exitoso como administrador.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Credenciales incorrectas. Inténtalo de nuevo.', 'danger')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('is_admin', None)
+    flash('Has cerrado sesión.', 'success')
+    return redirect(url_for('index'))
 
 @app.route('/')
 def index():
@@ -104,15 +128,22 @@ def index():
                            equipos=equipos_para_html,
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
-                           pc_filter=pc_filter)
+                           pc_filter=pc_filter,
+                           is_admin=session.get('is_admin'))
 
 @app.route('/manage_personal')
 def manage_personal():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     personal_list = Personal.query.all()
-    return render_template('personal_management.html', personal_list=personal_list)
+    return render_template('personal_management.html', personal_list=personal_list, is_admin=True)
 
 @app.route('/add_personal', methods=['POST'])
 def add_personal():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     nombre_responsable = request.form['nombre_responsable']
     email = request.form['email']
     if nombre_responsable:
@@ -124,6 +155,9 @@ def add_personal():
 
 @app.route('/delete_personal/<int:id>', methods=['POST'])
 def delete_personal(id):
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     personal_to_delete = Personal.query.get_or_404(id)
     db.session.delete(personal_to_delete)
     db.session.commit()
@@ -132,11 +166,17 @@ def delete_personal(id):
 
 @app.route('/manage_equipment')
 def manage_equipment():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     equipment_list = Equipo.query.all()
-    return render_template('equipment_management.html', equipment_list=equipment_list)
+    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True)
 
 @app.route('/add_equipment', methods=['POST'])
 def add_equipment():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     nombre_equipo = request.form['nombre_equipo']
     descripcion = request.form['descripcion']
     if nombre_equipo:
@@ -148,6 +188,9 @@ def add_equipment():
 
 @app.route('/delete_equipment/<int:id>', methods=['POST'])
 def delete_equipment(id):
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     equipment_to_delete = Equipo.query.get_or_404(id)
     db.session.delete(equipment_to_delete)
     db.session.commit()
@@ -156,6 +199,7 @@ def delete_equipment(id):
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
+    # Cualquier usuario puede registrar una salida
     equipo_nombre = request.form['equipo_id']
     personal_nombre_salida = request.form['personal_id_salida']
     
@@ -175,6 +219,9 @@ def registrar_salida():
 
 @app.route('/registrar_devolucion', methods=['POST'])
 def registrar_devolucion():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     registro_id = request.form['registro_id']
     personal_nombre_devolucion = request.form['personal_id_devolucion']
     
@@ -193,6 +240,9 @@ def registrar_devolucion():
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
     selected_records_ids = request.form.getlist('selected_records')
     responsible_devolucion = request.form['batch_responsible_devolucion']
     batch_action = request.form['batch_action']

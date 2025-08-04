@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Guardían Digital</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Guardián Digital">
+            <span>Guardían Digital</span>
+        </div>
+        <button class="hamburger" id="hamburger-btn">&#9776;</button>
+        <ul class="navbar-nav" id="navbar-menu">
+            <li><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li><a href="{{ url_for('login') }}" class="login-btn">Iniciar Sesión</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-content">
+        <div class="container login-container">
+            <h1>Iniciar Sesión como Administrador</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('login') }}" method="POST" class="login-form">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" name="username" required>
+                
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+
+                <input type="submit" value="Acceder">
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const navbarMenu = document.getElementById('navbar-menu');
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', function() {
+                navbarMenu.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

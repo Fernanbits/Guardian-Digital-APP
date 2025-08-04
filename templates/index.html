@@ -16,14 +16,20 @@
         <button class="hamburger" id="hamburger-btn">&#9776;</button>
         <ul class="navbar-nav" id="navbar-menu">
             <li><a href="{{ url_for('index') }}">Inicio</a></li>
-            <li><a href="{{ url_for('manage_personal') }}">Personal</a></li>
-            <li><a href="{{ url_for('manage_equipment') }}">Equipos</a></li>
+            {% if is_admin %}
+                <li><a href="{{ url_for('manage_personal') }}">Personal</a></li>
+                <li><a href="{{ url_for('manage_equipment') }}">Equipos</a></li>
+                <li><a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesión</a></li>
+            {% else %}
+                <li><a href="{{ url_for('login') }}" class="login-btn">Iniciar Sesión</a></li>
+            {% endif %}
         </ul>
     </nav>
 
     <div class="page-content">
         <h1>Sistema Guardián Digital</h1>
 
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <ul class="flash-messages">
@@ -78,11 +84,15 @@
 
         <div class="container">
             <h2>Registros de Uso de Equipos</h2>
+            {% if is_admin %}
             <form action="/batch_update" method="POST" class="batch-update-form">
+            {% endif %}
                 <table>
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="select_all_records"></th>
+                            {% if is_admin %}
+                                <th><input type="checkbox" id="select_all_records"></th>
+                            {% endif %}
                             <th>ID Registro</th>
                             <th>Fecha y Hora Salida</th>
                             <th>Nombre Usuario</th>
@@ -91,17 +101,21 @@
                             <th>Fecha y Hora Devolución</th>
                             <th>ID Personal Devolución</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
+                            {% if is_admin %}
+                                <th>Acciones</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for registro in registros %}
                         <tr>
+                            {% if is_admin %}
                             <td>
                                 {% if registro['Estado'] == 'Pendiente' %}
                                     <input type="checkbox" name="selected_records" value="{{ registro['ID Registro'] }}">
                                 {% endif %}
                             </td>
+                            {% endif %}
                             <td data-label="ID Registro">{{ registro['ID Registro'] }}</td>
                             <td data-label="Fecha y Hora Salida">{{ registro['Fecha y Hora Salida'] }}</td>
                             <td data-label="Nombre Usuario">{{ registro['Nombre Usuario'] }}</td>
@@ -113,7 +127,8 @@
                                 <span class="status-badge status-{{ registro['Estado']|lower }}">
                                     {{ registro['Estado'] }}
                                 </span>
-                                </td>
+                            </td>
+                            {% if is_admin %}
                             <td data-label="Acciones">
                                 {% if registro['Estado'] == 'Pendiente' %}
                                 <form action="/registrar_devolucion" method="POST" class="inline-devolucion-form">
@@ -130,11 +145,12 @@
                                 -
                                 {% endif %}
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-
+            {% if is_admin %}
                 <div class="batch-actions">
                     <label for="batch_responsible_devolucion">Responsable para lote:</label>
                     <select name="batch_responsible_devolucion" id="batch_responsible_devolucion">
@@ -147,16 +163,16 @@
                     <select name="batch_action" id="batch_action" required>
                         <option value="">-- Seleccione acción --</option>
                         <option value="complete">Completar seleccionados</option>
-                        </select>
+                    </select>
 
                     <input type="submit" value="Realizar acción en lote">
                 </div>
             </form>
+            {% endif %}
         </div>
     </div>
     
     <script>
-        // JavaScript para seleccionar/deseleccionar todos los checkboxes
         document.addEventListener('DOMContentLoaded', function() {
             const selectAllCheckbox = document.getElementById('select_all_records');
             const recordCheckboxes = document.querySelectorAll('input[name="selected_records"]');

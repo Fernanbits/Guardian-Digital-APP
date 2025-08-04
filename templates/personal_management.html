@@ -16,64 +16,77 @@
         <button class="hamburger" id="hamburger-btn">&#9776;</button>
         <ul class="navbar-nav" id="navbar-menu">
             <li><a href="{{ url_for('index') }}">Inicio</a></li>
-            <li><a href="{{ url_for('manage_personal') }}">Personal</a></li>
-            <li><a href="{{ url_for('manage_equipment') }}">Equipos</a></li>
+            {% if is_admin %}
+                <li><a href="{{ url_for('manage_personal') }}">Personal</a></li>
+                <li><a href="{{ url_for('manage_equipment') }}">Equipos</a></li>
+                <li><a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesión</a></li>
+            {% else %}
+                <li><a href="{{ url_for('login') }}" class="login-btn">Iniciar Sesión</a></li>
+            {% endif %}
         </ul>
     </nav>
 
     <div class="page-content">
-        <h1>Gestión de Personal</h1>
+        {% if is_admin %}
+            <h1>Gestión de Personal</h1>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <ul class="flash-messages">
-            {% for category, message in messages %}
-              <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                  <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
 
-        <div class="container">
-            <h2>Añadir Nuevo Personal</h2>
-            <form action="{{ url_for('add_personal') }}" method="POST">
-                <label for="nombre_responsable">Nombre Completo:</label>
-                <input type="text" id="nombre_responsable" name="nombre_responsable" required>
-                
-                <label for="email">Email (opcional):</label>
-                <input type="email" id="email" name="email">
+            <div class="container">
+                <h2>Añadir Nuevo Personal</h2>
+                <form action="{{ url_for('add_personal') }}" method="POST">
+                    <label for="nombre_responsable">Nombre Completo:</label>
+                    <input type="text" id="nombre_responsable" name="nombre_responsable" required>
+                    
+                    <label for="email">Email (opcional):</label>
+                    <input type="email" id="email" name="email">
 
-                <input type="submit" value="Añadir Personal">
-            </form>
-        </div>
+                    <input type="submit" value="Añadir Personal">
+                </form>
+            </div>
 
-        <div class="container">
-            <h2>Personal Existente</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre Completo</th>
-                        <th>Email</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for persona in personal_list %}
-                    <tr>
-                        <td>{{ persona.id }}</td>
-                        <td data-label="Nombre Completo">{{ persona.nombre_responsable }}</td>
-                        <td data-label="Email">{{ persona.email }}</td>
-                        <td data-label="Acciones">
-                            <form action="{{ url_for('delete_personal', id=persona.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a {{ persona.nombre_responsable }}?');">
-                                <input type="submit" value="Eliminar" class="delete-btn">
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            <div class="container">
+                <h2>Personal Existente</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for persona in personal_list %}
+                        <tr>
+                            <td>{{ persona.id }}</td>
+                            <td data-label="Nombre Completo">{{ persona.nombre_responsable }}</td>
+                            <td data-label="Email">{{ persona.email }}</td>
+                            <td data-label="Acciones">
+                                <form action="{{ url_for('delete_personal', id=persona.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a {{ persona.nombre_responsable }}?');">
+                                    <input type="submit" value="Eliminar" class="delete-btn">
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="container">
+                <h2>Acceso Denegado</h2>
+                <p>Esta página es solo para administradores.</p>
+                <p>Por favor, <a href="{{ url_for('login') }}">inicia sesión</a> para acceder.</p>
+            </div>
+        {% endif %}
     </div>
     
     <script>
