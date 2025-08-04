@@ -1,18 +1,23 @@
-/* Estilos generales */
+/* Estilos generales y tipografía */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 20px;
-    background-color: #eef1f4; /* Un gris azulado suave */
+    padding: 0;
+    background-color: #eef1f4;
     color: #333;
     line-height: 1.6;
 }
 
 h1, h2 {
-    color: #2c3e50; /* Azul oscuro */
+    color: #2c3e50;
     text-align: center;
     margin-bottom: 25px;
     font-weight: 600;
+}
+.page-content {
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 /* Contenedores principales */
@@ -22,16 +27,13 @@ h1, h2 {
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     margin-bottom: 30px;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 /* Formularios */
 form {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Espacio entre elementos del formulario */
+    gap: 15px;
     padding: 20px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
@@ -46,17 +48,17 @@ form label {
 
 form input[type="text"],
 form select,
-.filter-form input[type="checkbox"] { /* Añadir checkbox para estilos */
-    width: 100%; /* Ocupa todo el ancho disponible del contenedor */
+.filter-form input[type="checkbox"] {
+    width: 100%;
     padding: 10px 12px;
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 1em;
-    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+    box-sizing: border-box;
     background-color: #f8f8f8;
 }
 .filter-form input[type="checkbox"] {
-    width: auto; /* Ajustar ancho para checkboxes */
+    width: auto;
     padding: 0;
     margin-top: 5px;
 }
@@ -70,7 +72,7 @@ form select:focus {
 }
 
 form input[type="submit"] {
-    background-color: #007bff; /* Azul brillante */
+    background-color: #007bff;
     color: white;
     padding: 12px 25px;
     border: none;
@@ -79,22 +81,34 @@ form input[type="submit"] {
     font-size: 1.1em;
     font-weight: 600;
     transition: background-color 0.3s ease;
-    align-self: flex-end; /* Alinea el botón a la derecha */
+    align-self: flex-end;
+}
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.delete-btn:hover {
+    background-color: #c82333;
 }
 
 form input[type="submit"]:hover {
-    background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+    background-color: #0056b3;
 }
 
 /* Tablas */
 table {
     width: 100%;
-    border-collapse: separate; /* Para que border-radius funcione en thead/tbody */
+    border-collapse: separate;
     border-spacing: 0;
     margin-top: 25px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     border-radius: 8px;
-    overflow: hidden; /* Para que el border-radius se aplique a los bordes internos */
+    overflow: hidden;
 }
 
 th, td {
@@ -112,11 +126,11 @@ th {
 }
 
 tbody tr:nth-child(even) {
-    background-color: #f9f9f9; /* Rayas para facilitar la lectura */
+    background-color: #f9f9f9;
 }
 
 tbody tr:hover {
-    background-color: #eaf6ff; /* Resaltar fila al pasar el mouse */
+    background-color: #eaf6ff;
 }
 
 /* Estilos para el formulario de devolución en línea dentro de la tabla */
@@ -125,15 +139,15 @@ tbody tr:hover {
     flex-direction: column;
     gap: 8px;
     padding: 10px;
-    background-color: #f3f7fa; /* Un azul muy claro */
+    background-color: #f3f7fa;
     border-radius: 6px;
     border: 1px solid #e0e6ec;
 }
 
 .inline-devolucion-form select,
 .inline-devolucion-form input[type="submit"] {
-    width: auto; /* Permite que los elementos se ajusten a su contenido */
-    max-width: 200px; /* Ancho máximo para que no se extiendan demasiado */
+    width: auto;
+    max-width: 200px;
     margin-bottom: 0;
 }
 
@@ -148,22 +162,46 @@ tbody tr:hover {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.status-pendiente { background-color: #ffc107; color: #333; } /* Amarillo más cálido */
-.status-completo { background-color: #28a745; } /* Verde vibrante */
-.status-archived { background-color: #6c757d; font-size: 0.7em; } /* Gris para archivado */
+.status-pendiente { background-color: #ffc107; color: #333; }
+.status-completo { background-color: #28a745; }
+.status-archived { background-color: #6c757d; font-size: 0.75em; }
 
 
 /* Estilos de error (si los usas) */
-.error {
-    color: #dc3545; /* Rojo de Bootstrap */
-    font-weight: bold;
-    margin-top: 10px;
+.flash-messages {
+    list-style: none;
+    padding: 10px 20px;
+    margin: 10px auto 20px auto;
+    max-width: 900px;
+    border-radius: 8px;
     text-align: center;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+.flash-messages li {
+    margin: 5px 0;
+    padding: 0;
+}
+.flash-messages .success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.flash-messages .warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+.flash-messages .danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
 
 /* Estilos para la barra de navegación (Menu) */
 .navbar {
-    background-color: #2c3e50; /* Azul oscuro */
+    background-color: #2c3e50;
     color: white;
     padding: 15px 20px;
     display: flex;
@@ -177,6 +215,15 @@ tbody tr:hover {
     font-size: 1.8em;
     font-weight: 700;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+}
+.navbar-brand img {
+    height: 40px;
+    margin-right: 15px;
+}
+.hamburger {
+    display: none;
 }
 
 .navbar-nav {
@@ -184,10 +231,7 @@ tbody tr:hover {
     margin: 0;
     padding: 0;
     display: flex;
-}
-
-.navbar-nav li {
-    margin-left: 25px;
+    gap: 25px;
 }
 
 .navbar-nav a {
@@ -199,53 +243,48 @@ tbody tr:hover {
 }
 
 .navbar-nav a:hover {
-    color: #007bff; /* Azul de resalte */
+    color: #007bff;
 }
 
 /* Estilos para el contenedor de filtros */
 .filter-container {
     padding: 25px;
-    background-color: #f8fbfd; /* Un fondo más claro para el filtro */
+    background-color: #f8fbfd;
     border-color: #e6f0f5;
 }
 
 .filter-form {
-    margin-top: 0; /* Quitar el margin-top del form general */
+    margin-top: 0;
     padding: 0;
     border: none;
     background-color: transparent;
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas para labels/inputs */
-    gap: 15px 20px; /* Espacio entre filas y columnas */
-    align-items: center; /* Alinea los elementos al centro */
+    grid-template-columns: auto 1fr auto 1fr auto;
+    gap: 15px 20px;
+    align-items: center;
 }
-
 .filter-form label {
-    margin-bottom: 0; /* Quitar el margin-bottom del label general */
+    margin-bottom: 0;
+    white-space: nowrap;
 }
-
 .filter-form input[type="text"] {
     width: 100%;
 }
-
 .filter-form input[type="submit"] {
-    grid-column: 1 / span 2; /* Que ocupe ambas columnas */
     width: auto;
-    margin: 10px auto 0 auto; /* Centrar el botón */
+    margin: 0;
     padding: 10px 20px;
+    grid-column: span 1;
 }
-
 .clear-filters-btn {
-    grid-column: 1 / span 2;
     text-align: center;
     display: block;
-    margin-top: 10px;
     color: #007bff;
     text-decoration: none;
     font-size: 0.95em;
     transition: color 0.3s ease;
+    white-space: nowrap;
 }
-
 .clear-filters-btn:hover {
     color: #0056b3;
     text-decoration: underline;
@@ -259,31 +298,35 @@ tbody tr:hover {
     border-radius: 8px;
     background-color: #fcfcfc;
 }
-
 .batch-actions {
-    display: grid;
-    grid-template-columns: auto 1fr auto; /* Ajustar columnas para elementos en línea */
-    gap: 15px;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 15px;
     margin-top: 20px;
     padding-top: 15px;
     border-top: 1px solid #eee;
 }
 .batch-actions label {
     margin-bottom: 0;
-    white-space: nowrap; /* Evitar que el label se rompa */
+    white-space: nowrap;
 }
-.batch-actions select {
-    width: 100%;
-}
+.batch-actions select,
 .batch-actions input[type="submit"] {
-    align-self: flex-start; /* Alinea el botón al inicio */
     width: auto;
-    margin: 0; /* Eliminar margen extra */
+    flex-grow: 1;
+    margin: 0;
 }
 #select_all_records {
     width: auto;
     margin-right: 5px;
+}
+
+/* Estilo para registros archivados en la tabla */
+.status-archived {
+    background-color: #6c757d;
+    font-size: 0.75em;
+    margin-left: 5px;
 }
 
 /* Flash Messages */
@@ -317,10 +360,9 @@ tbody tr:hover {
     border: 1px solid #f5c6cb;
 }
 
-
 /* Responsividad general */
 @media (max-width: 768px) {
-    body {
+    .page-content {
         padding: 10px;
     }
     .container {
@@ -339,18 +381,41 @@ tbody tr:hover {
     .navbar {
         flex-direction: column;
         align-items: flex-start;
-        padding: 10px;
-        margin-bottom: 20px;
+        padding: 10px 20px;
+        position: relative;
     }
     .navbar-brand {
-        margin-bottom: 10px;
+        margin-bottom: 0;
+    }
+    .hamburger {
+        display: block;
+        position: absolute;
+        right: 20px;
+        top: 15px;
     }
     .navbar-nav {
         flex-direction: column;
         align-items: flex-start;
+        display: none;
+        width: 100%;
+        margin-top: 10px;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease-in-out;
+    }
+    .navbar-nav.active {
+        display: flex;
+        max-height: 200px;
     }
     .navbar-nav li {
         margin: 5px 0;
+        width: 100%;
+    }
+    .navbar-nav a {
+        padding: 10px 15px;
+        background-color: #34495e;
+        display: block;
+        border-radius: 5px;
     }
 
     /* Filtros en móvil */
@@ -358,6 +423,8 @@ tbody tr:hover {
         grid-template-columns: 1fr;
         gap: 10px;
     }
+    .filter-form label,
+    .filter-form input[type="text"],
     .filter-form input[type="submit"],
     .clear-filters-btn {
         grid-column: auto;
@@ -366,6 +433,10 @@ tbody tr:hover {
     }
     .filter-form label {
         text-align: left;
+        margin-top: 10px;
+    }
+    .filter-form label:first-of-type {
+        margin-top: 0;
     }
 
     /* Tabla en móvil */
@@ -383,19 +454,19 @@ tbody tr:hover {
         border: 1px solid #ddd;
         border-radius: 8px;
         padding: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra ligera para cada card de fila */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     td {
         display: block;
         text-align: left;
         padding-left: 0;
         position: relative;
-        padding-bottom: 10px; /* Espacio debajo del contenido de la celda */
-        border-bottom: none; /* Eliminar bordes inferiores de celdas individuales */
+        padding-bottom: 10px;
+        border-bottom: none;
     }
     td:before {
         content: attr(data-label);
-        position: relative; /* Cambiado a relative para fluir con el texto */
+        position: relative;
         display: block;
         font-weight: bold;
         color: #555;
@@ -406,21 +477,21 @@ tbody tr:hover {
     td:last-child {
         padding-bottom: 0;
     }
-    /* Estilo específico para el checkbox de la fila */
     td:first-child {
         text-align: center;
         padding-top: 0;
         padding-bottom: 0;
-        min-height: 20px; /* Asegura espacio para el checkbox */
+        min-height: 20px;
     }
     td:first-child:before {
-        display: none; /* Ocultar etiqueta para el checkbox */
+        display: none;
     }
 
     /* Acciones en lote en móvil */
     .batch-actions {
-        grid-template-columns: 1fr; /* Una columna para móvil */
+        grid-template-columns: 1fr;
         gap: 10px;
+        width: 100%;
     }
     .batch-actions select,
     .batch-actions input[type="submit"] {
@@ -430,25 +501,4 @@ tbody tr:hover {
     .batch-actions label {
         text-align: left;
     }
-}
-
-/* Estilo para registros archivados en la tabla */
-.status-archived {
-    background-color: #6c757d; /* Gris para archivado */
-    font-size: 0.75em; /* Ligeramente más pequeño */
-    margin-left: 5px; /* Espacio entre badge de estado y archivado */
-} 
-
-/* Estilos para el botón de eliminar en la tabla de gestión */
-.delete-btn {
-    background-color: #dc3545; /* Rojo */
-    color: white;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-.delete-btn:hover {
-    background-color: #c82333;
 }

@@ -19,7 +19,6 @@ db = SQLAlchemy(app)
 
 BUENOS_AIRES_TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
-# Función para generar UUIDs (para evitar el warning del linter en lambda)
 def generate_uuid():
     return str(uuid.uuid4())
 
@@ -48,7 +47,6 @@ class Registro(db.Model):
     fecha_hora_devolucion = db.Column(db.DateTime, nullable=True)
     id_personal_devolucion = db.Column(db.String(100), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default='Pendiente')
-    # is_archived = db.Column(db.Boolean, default=False) # COMENTADO TEMPORALMENTE
 
     def __repr__(self):
         return f"<Registro {self.id} - {self.nombre_equipo}>"
@@ -62,7 +60,7 @@ def index():
     pc_filter = request.args.get('pc_filter')
 
     query = Registro.query
-
+    
     if responsable_filter:
         query = query.filter(or_(
             Registro.id_personal_salida.ilike(f'%{responsable_filter}%'),
@@ -107,8 +105,6 @@ def index():
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
                            pc_filter=pc_filter)
-
-# --- INICIO: NUEVAS RUTAS PARA LA GESTIÓN DE PERSONAL Y EQUIPOS ---
 
 @app.route('/manage_personal')
 def manage_personal():
@@ -157,8 +153,6 @@ def delete_equipment(id):
     db.session.commit()
     flash(f'Equipo "{equipment_to_delete.nombre_equipo}" eliminado con éxito.', 'success')
     return redirect(url_for('manage_equipment'))
-
-# --- FIN: NUEVAS RUTAS PARA LA GESTIÓN DE PERSONAL Y EQUIPOS ---
 
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
@@ -221,6 +215,7 @@ def batch_update():
     db.session.commit()
     flash(f'{updated_count} registros actualizados en lote como {batch_action}.', 'success')
     return redirect(url_for('index'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
