@@ -68,7 +68,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Credenciales incorrectas. Inténtalo de nuevo.', 'danger')
-    return render_template('login.html')
+    return render_template('login.html', datetime=datetime)
 
 @app.route('/logout')
 def logout():
@@ -127,7 +127,8 @@ def index():
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
                            pc_filter=pc_filter,
-                           is_admin=session.get('is_admin'))
+                           is_admin=session.get('is_admin'),
+                           datetime=datetime)
 
 @app.route('/manage_personal')
 def manage_personal():
@@ -135,7 +136,7 @@ def manage_personal():
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
     personal_list = Personal.query.all()
-    return render_template('personal_management.html', personal_list=personal_list, is_admin=True)
+    return render_template('personal_management.html', personal_list=personal_list, is_admin=True, datetime=datetime)
 
 @app.route('/add_personal', methods=['POST'])
 def add_personal():
@@ -168,7 +169,7 @@ def manage_equipment():
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
     equipment_list = Equipo.query.all()
-    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True)
+    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True, datetime=datetime)
 
 @app.route('/add_equipment', methods=['POST'])
 def add_equipment():
