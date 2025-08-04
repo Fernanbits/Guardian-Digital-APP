@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guardían Digital</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
@@ -46,6 +49,7 @@
     <div class="container page-content">
         <h1 class="text-center my-4">Sistema Guardián Digital</h1>
 
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <ul class="flash-messages">
@@ -160,7 +164,7 @@
                                         {% if registro['Estado'] == 'Pendiente' %}
                                         <form action="/registrar_devolucion" method="POST" class="d-inline">
                                             <input type="hidden" name="registro_id" value="{{ registro['ID Registro'] }}">
-                                            <select name="personal_id_devolucion" class="form-select form-select-sm d-inline w-auto me-1">
+                                            <select name="personal_id_devolucion" class="form-select form-select-sm d-inline w-auto me-1" required>
                                                 <option value="">-- Persona recibe --</option>
                                                 {% for persona in personal %}
                                                     <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
@@ -181,7 +185,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-4">
                                 <label for="batch_responsible_devolucion" class="form-label">Responsable para lote:</label>
-                                <select name="batch_responsible_devolucion" id="batch_responsible_devolucion" class="form-select">
+                                <select name="batch_responsible_devolucion" id="batch_responsible_devolucion" class="form-select" required>
                                     <option value="">-- Seleccione responsable --</option>
                                     {% for persona in personal %}
                                         <option value="{{ persona['Nombre Responsable'] }}">{{ persona['Nombre Responsable'] }}</option>
@@ -205,6 +209,13 @@
         </div>
     </div>
     
+    <footer class="footer bg-dark text-white text-center">
+        <div class="container">
+            <p class="mb-0">&copy; {{ datetime.now().year }} Fernz Learn & Design. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {

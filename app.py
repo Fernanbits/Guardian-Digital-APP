@@ -219,6 +219,11 @@ def registrar_devolucion():
     registro_id = request.form['registro_id']
     personal_nombre_devolucion = request.form['personal_id_devolucion']
     
+    # NUEVO: Validar que se seleccionó un responsable
+    if not personal_nombre_devolucion:
+        flash('Error: Debe seleccionar un responsable para la devolución.', 'danger')
+        return redirect(url_for('index'))
+
     fecha_hora_devolucion_utc = datetime.now(timezone.utc)
 
     registro = Registro.query.get(registro_id)
@@ -240,6 +245,11 @@ def batch_update():
 
     if not selected_records_ids:
         flash('No se seleccionó ningún registro para la acción en lote.', 'warning')
+        return redirect(url_for('index'))
+
+    # NUEVO: Validar que se seleccionó un responsable para el lote
+    if batch_action == 'complete' and not responsible_devolucion:
+        flash('Error: Debe seleccionar un responsable para la devolución en lote.', 'danger')
         return redirect(url_for('index'))
 
     updated_count = 0
