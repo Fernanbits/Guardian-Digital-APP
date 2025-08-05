@@ -1,3 +1,6 @@
+#========================================================
+# Imports y Configuración
+#========================================================
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
@@ -22,9 +25,15 @@ db = SQLAlchemy(app)
 
 BUENOS_AIRES_TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
+#========================================================
+# Funciones Auxiliares
+#========================================================
 def generate_uuid():
     return str(uuid.uuid4())
 
+#========================================================
+# Modelos de la Base de Datos
+#========================================================
 class Personal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre_responsable = db.Column(db.String(100), nullable=False, unique=True)
@@ -57,6 +66,9 @@ class Registro(db.Model):
 with app.app_context():
     db.create_all()
 
+#========================================================
+# Autenticación y Rutas Principales
+#========================================================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -68,7 +80,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Credenciales incorrectas. Inténtalo de nuevo.', 'danger')
-    return render_template('login.html')
+    return render_template('login.html', datetime=datetime)
 
 @app.route('/logout')
 def logout():
@@ -127,15 +139,19 @@ def index():
                            registros=registros_para_html,
                            responsable_filter=responsable_filter,
                            pc_filter=pc_filter,
-                           is_admin=session.get('is_admin'))
+                           is_admin=session.get('is_admin'),
+                           datetime=datetime)
 
+#========================================================
+# Rutas de Gestión de Personal (Admin)
+#========================================================
 @app.route('/manage_personal')
 def manage_personal():
     if not session.get('is_admin'):
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
     personal_list = Personal.query.all()
-    return render_template('personal_management.html', personal_list=personal_list, is_admin=True)
+    return render_template('personal_management.html', personal_list=personal_list, is_admin=True, datetime=datetime)
 
 @app.route('/add_personal', methods=['POST'])
 def add_personal():
@@ -162,13 +178,16 @@ def delete_personal(id):
     flash(f'Persona "{personal_to_delete.nombre_responsable}" eliminada con éxito.', 'success')
     return redirect(url_for('manage_personal'))
 
+#========================================================
+# Rutas de Gestión de Equipos (Admin)
+#========================================================
 @app.route('/manage_equipment')
 def manage_equipment():
     if not session.get('is_admin'):
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
     equipment_list = Equipo.query.all()
-    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True)
+    return render_template('equipment_management.html', equipment_list=equipment_list, is_admin=True, datetime=datetime)
 
 @app.route('/add_equipment', methods=['POST'])
 def add_equipment():
@@ -206,6 +225,9 @@ def delete_registro(id):
     flash('Registro eliminado con éxito.', 'success')
     return redirect(url_for('index'))
 
+#========================================================
+# Rutas de Acciones (Salida y Devolución)
+#========================================================
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
     equipo_nombre = request.form['equipo_id']
@@ -225,27 +247,29 @@ def registrar_salida():
     flash('Salida de equipo registrada con éxito!', 'success')
     return redirect(url_for('index'))
 
-@app.route('/registrar_devolucion', methods=['POST'])
-def registrar_devolucion():
-    registro_id = request.form['registro_id']
-    personal_nombre_devolucion = request.form['personal_id_devolucion']
-    
-    if not personal_nombre_devolucion:
-        flash('Error: Debe seleccionar un responsable para la devolución.', 'danger')
+@app.route('/devolucion/<string:registro_id>', methods=['GET', 'POST'])
+def devolucion(registro_id):
+    registro = Registro.query.get(registro_id)
+    if not registro:
+        flash('Error: Registro no encontrado.', 'danger')
         return redirect(url_for('index'))
 
-    fecha_hora_devolucion_utc = datetime.now(timezone.utc)
+    if request.method == 'POST':
+        personal_nombre_devolucion = request.form.get('personal_id_devolucion')
+        if not personal_nombre_devolucion:
+            flash('Error: Debe seleccionar un responsable para la devolución.', 'danger')
+            return redirect(url_for('devolucion', registro_id=registro_id))
 
-    registro = Registro.query.get(registro_id)
-    if registro:
+        fecha_hora_devolucion_utc = datetime.now(timezone.utc)
         registro.id_personal_devolucion = personal_nombre_devolucion
         registro.fecha_hora_devolucion = fecha_hora_devolucion_utc
         registro.estado = 'Completo'
         db.session.commit()
         flash('Devolución de equipo registrada con éxito!', 'success')
-    else:
-        flash('Error: Registro no encontrado para la devolución.', 'danger')
-    return redirect(url_for('index'))
+        return redirect(url_for('index'))
+
+    personal_list = Personal.query.all()
+    return render_template('devolucion_form.html', registro=registro, personal_list=personal_list, datetime=datetime)
 
 @app.route('/batch_update', methods=['POST'])
 def batch_update():
@@ -279,6 +303,8 @@ def batch_update():
     flash(f'{updated_count} registros actualizados en lote como {batch_action}.', 'success')
     return redirect(url_for('index'))
 
-
+#========================================================
+# Inicio de la Aplicación
+#========================================================
 if __name__ == '__main__':
     app.run(debug=True)
