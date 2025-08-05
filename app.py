@@ -93,16 +93,22 @@ def index():
     responsable_filter = request.args.get('responsable_filter')
     pc_filter = request.args.get('pc_filter')
 
+    # Explicación de la optimización:
+    # La búsqueda con `ilike(f'%{filtro}%')` es muy lenta porque no puede usar índices.
+    # La forma más eficiente es buscar con un comodín solo al final,
+    # lo que permite que el motor de la base de datos use un índice.
+    # Si necesitas búsqueda por sub-string, lo ideal es usar un motor de
+    # búsqueda de texto completo (Full-Text Search).
     query = Registro.query
     
     if responsable_filter:
         query = query.filter(or_(
-            Registro.id_personal_salida.ilike(f'%{responsable_filter}%'),
-            Registro.id_personal_devolucion.ilike(f'%{responsable_filter}%')
+            Registro.id_personal_salida.ilike(f'{responsable_filter}%'),
+            Registro.id_personal_devolucion.ilike(f'{responsable_filter}%')
         ))
     
     if pc_filter:
-        query = query.filter(Registro.nombre_equipo.ilike(f'%{pc_filter}%'))
+        query = query.filter(Registro.nombre_equipo.ilike(f'{pc_filter}%'))
 
     query = query.order_by(Registro.fecha_hora_salida.desc())
 
@@ -276,16 +282,13 @@ def batch_update():
     if not session.get('is_admin'):
         flash('Acceso denegado. Se requiere ser administrador.', 'danger')
         return redirect(url_for('login'))
+    
     selected_records_ids = request.form.getlist('selected_records')
-    responsible_devolucion = request.form['batch_responsible_devolucion']
     batch_action = request.form['batch_action']
+    responsible_devolucion = request.form.get('batch_responsible_devolucion')
 
     if not selected_records_ids:
         flash('No se seleccionó ningún registro para la acción en lote.', 'warning')
-        return redirect(url_for('index'))
-
-    if batch_action == 'complete' and not responsible_devolucion:
-        flash('Error: Debe seleccionar un responsable para la devolución en lote.', 'danger')
         return redirect(url_for('index'))
 
     updated_count = 0
@@ -294,13 +297,47 @@ def batch_update():
         if registro:
             if batch_action == 'complete':
                 if registro.estado == 'Pendiente':
+                    if not responsible_devolucion:
+                        flash('Error: Debe seleccionar un responsable para la devolución en lote.', 'danger')
+                        return redirect(url_for('index'))
                     registro.id_personal_devolucion = responsible_devolucion
                     registro.fecha_hora_devolucion = datetime.now(timezone.utc)
                     registro.estado = 'Completo'
                     updated_count += 1
+            elif batch_action == 'archive':
+                if registro.estado in ['Completo', 'Pendiente']:
+                    registro.estado = 'Archivado'
+                    updated_count += 1
+    
+    if updated_count > 0:
+        db.session.commit()
+        flash(f'{updated_count} registros actualizados en lote a "{batch_action}".', 'success')
+    else:
+        flash('No se realizaron cambios. Asegúrate de que los registros seleccionados sean válidos para la acción.', 'info')
+    
+    return redirect(url_for('index'))
+
+@app.route('/batch_delete', methods=['POST'])
+def batch_delete():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
+    
+    selected_records_ids = request.form.getlist('selected_records')
+
+    if not selected_records_ids:
+        flash('No se seleccionó ningún registro para eliminar.', 'warning')
+        return redirect(url_for('index'))
+    
+    deleted_count = 0
+    for record_id in selected_records_ids:
+        registro_to_delete = Registro.query.get(record_id)
+        if registro_to_delete:
+            db.session.delete(registro_to_delete)
+            deleted_count += 1
     
     db.session.commit()
-    flash(f'{updated_count} registros actualizados en lote como {batch_action}.', 'success')
+    flash(f'{deleted_count} registros eliminados con éxito.', 'success')
     return redirect(url_for('index'))
 
 #========================================================
