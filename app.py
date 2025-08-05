@@ -92,15 +92,13 @@ def logout():
 def index():
     responsable_filter = request.args.get('responsable_filter')
     pc_filter = request.args.get('pc_filter')
-
-    # Explicación de la optimización:
-    # La búsqueda con `ilike(f'%{filtro}%')` es muy lenta porque no puede usar índices.
-    # La forma más eficiente es buscar con un comodín solo al final,
-    # lo que permite que el motor de la base de datos use un índice.
-    # Si necesitas búsqueda por sub-string, lo ideal es usar un motor de
-    # búsqueda de texto completo (Full-Text Search).
+    
     query = Registro.query
     
+    # Nuevo filtro: los usuarios no administradores no verán registros "Archivado"
+    if not session.get('is_admin'):
+        query = query.filter(Registro.estado != 'Archivado')
+
     if responsable_filter:
         query = query.filter(or_(
             Registro.id_personal_salida.ilike(f'{responsable_filter}%'),
@@ -232,7 +230,7 @@ def delete_registro(id):
     return redirect(url_for('index'))
 
 #========================================================
-# Rutas de Acciones (Salida y Devolución)
+# Rutas de Acciones (Salida, Devolución, y Archivados)
 #========================================================
 @app.route('/registrar_salida', methods=['POST'])
 def registrar_salida():
@@ -340,8 +338,35 @@ def batch_delete():
     flash(f'{deleted_count} registros eliminados con éxito.', 'success')
     return redirect(url_for('index'))
 
+@app.route('/archived_records')
+def archived_records():
+    if not session.get('is_admin'):
+        flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+        return redirect(url_for('login'))
+
+    archived_records_db = Registro.query.filter_by(estado='Archivado').order_by(Registro.fecha_hora_salida.desc()).all()
+
+    registros_para_html = []
+    for reg in archived_records_db:
+        fecha_salida_local = reg.fecha_hora_salida.astimezone(BUENOS_AIRES_TZ) if reg.fecha_hora_salida else None
+        fecha_devolucion_local = reg.fecha_hora_devolucion.astimezone(BUENOS_AIRES_TZ) if reg.fecha_hora_devolucion else None
+
+        registros_para_html.append({
+            'ID Registro': reg.id,
+            'Fecha y Hora Salida': fecha_salida_local.strftime('%d/%m/%Y %H:%M') if fecha_salida_local else '',
+            'Nombre Usuario': reg.nombre_usuario,
+            'Nombre Equipo': reg.nombre_equipo,
+            'ID Personal Salida': reg.id_personal_salida,
+            'Fecha y Hora Devolucion': fecha_devolucion_local.strftime('%d/%m/%Y %H:%M') if fecha_devolucion_local else '',
+            'ID Personal Devolucion': reg.id_personal_devolucion,
+            'Estado': reg.estado,
+        })
+    
+    return render_template('archived_records.html', archived_records=registros_para_html, is_admin=True, datetime=datetime)
+
 #========================================================
 # Inicio de la Aplicación
 #========================================================
 if __name__ == '__main__':
     app.run(debug=True)
+
